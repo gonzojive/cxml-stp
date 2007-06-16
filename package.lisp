@@ -13,6 +13,8 @@
 	   #:copy
 	   #:unparse
 	   ;; #:query
+
+	   #:parent-node
 	   )
   (:documentation
    "@code{cxml-stp} implements ___.

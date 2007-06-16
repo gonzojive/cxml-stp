@@ -21,7 +21,10 @@
       cxml-devel@common-lisp.net</a>
     (<a href="http://common-lisp.net/cgi-bin/mailman/listinfo/cxml-devel">list information</a>).
   </p>
-
+  <p>
+    <i>Acknowledgements:</i>
+    cxml-stp is inspired heavily by <a href="http://www.xom.nu/">XOM</a>.
+  </p>
   <h3>Download and Installation</h3>
 
   <p>
@@ -58,6 +61,7 @@
 
   <h3>Documentation</h3>
   <p>
-    <a href="doc/index.html">API documentation</a> is available.
+    Please refer to the <a href="doc/index.html">API documentation</a>
+    for details.
   </p>
 </page>

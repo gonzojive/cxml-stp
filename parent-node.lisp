@@ -31,53 +31,31 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
-(defclass node ()
-  ((parent :reader parent :writer (setf %parent))))
+(defclass parent-node (node)
+  ((%base-uri)
+   (%children :accessor %children)))
 
-(defgeneric string-value (node))
+(defvar *check-uri-syntax* t)
 
-(defun document (node)
-  (check-type node node)
+(defgeneric %base-uri (node))
+(defmethod %base-uri ((node node)) (or (slot-value node '%base-uri) ""))
+(defmethod (setf %base-uri) (newval (node node))
+  (when (and newval *check-uri-syntax* (not (search "://" newval)))
+    (warn "base URI does not look like an absolute URL: ~S" newval))
+  (setf (slot-value node '%base-uri) (or newval "")))
+
+(defgeneric insertion-allowed (parent child position)) ;position?!
+
+(defun fill-in-base-uri (removed-child)
+  (setf (%base-uri removed-child)
+	(find-base-uri removed-child)))
+
+(defun find-base-uri (node)
   (loop
-     for parent = node then (parent parent)
-     while (and parent (not (typep parent 'document)))
-     finally (return parent)))
+     for n = node then parent
+     for parent = (parent node)
+     for uri = (%base-uri n)
+     while (and (equal uri "") parent)
+     finally (return uri)))
 
-(defun root (node)
-  (check-type node node)
-  (loop
-     for p = (parent node) then (parent p)
-     and q = node then p
-     while p
-     finally (return q)))
-
-(defgeneric base-uri (node)) ;fixme: hier muessen wir wissen, ob specified
-(defmethod base-uri ((node node))
-  (let ((parent (parent node)))
-    (if parent
-        (base-uri parent)
-        "")))
-
-(defgeneric detach (node))
-(defmethod detach ((node node))
-  (when (parent node)
-    (delete-child node (parent node))))
-
-;;; kinderkram
-;;; das ist noch unvollstaendig
-(defgeneric map-children (result-type function node))
-(defmacro do-children ((var node &optional result) &body body)
-  `(block nil
-     (map-children (lambda (,var) ,@body) ,node)
-     ,result))
-(defun list-children (node)
-  (map-children 'list #'identity node))
-
-(defgeneric copy (node))
-(defgeneric unparse (node handler))
-
-;; print-object nicht vergessen
-
-;;; (defun query (node xpath)
-;;;   ;; fixme
-;;;   )
+(defgeneric (setf base-uri) (newval node))
