@@ -14,7 +14,7 @@
     <html>
       <head>
 	<title>
-	  cxml-rng: Relax NG for Closure XML
+	  cxml-stp
 	</title>
 	<link rel="stylesheet" type="text/css" href="index.css"/>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -37,20 +37,15 @@
       <xsl:apply-templates/>
     </span>
   </xsl:template>
-  
+
   <xsl:template name="header">
     <div id="header">
-      <table cellspacing="0" cellpadding="0" width="100%">
-	<tr>
-	  <td width="176">
-	    <img src="doc/logo.png"/>
-	  </td>
-	  <td valign="center">
-	    &#x2014;
-	    <b> Relax NG for Closure XML</b>
-	  </td>
-	</tr>
-      </table>
+      <div style="margin-left: 30px">
+	<b>
+	  <span>cxml&#x2013;</span>
+	  <span style="color: #e0a655">stp</span>
+	</b>
+      </div>
     </div>
   </xsl:template>
 </xsl:stylesheet>

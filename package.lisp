@@ -1,6 +1,19 @@
 (defpackage :cxml-stp
   (:use :cl)
-  (:export )
+  (:export #:node
+	   #:parent
+	   #:document
+	   #:root
+	   #:base-uri
+	   #:detach
+	   #:string-value
+	   #:map-children
+	   #:do-children
+	   #:list-children
+	   #:copy
+	   #:unparse
+	   ;; #:query
+	   )
   (:documentation
    "@code{cxml-stp} implements ___.
     Relax NG} schema validation for Closure XML.

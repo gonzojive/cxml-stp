@@ -16,5 +16,5 @@
     :serial t
     :components
     ((:file "package")
-     (:file "stp"))
+     (:file "node"))
     :depends-on (:cxml))
