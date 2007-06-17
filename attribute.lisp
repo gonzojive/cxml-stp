@@ -32,9 +32,9 @@
 (declaim (optimize (debug 2)))
 
 
-;;;; Class ELEMENT
+;;;; Class ATTRIBUTE
 
-(defclass attribute (node)
+(defclass attribute (leaf-node)
   ((local-name :reader local-name :accessor (setf %local-name))
    (prefix :reader namespace-prefix :accessor %prefix)
    (namespace-uri :reader namespace-uri :accessor (setf %namespace-uri))
@@ -125,8 +125,5 @@
        (setf (%namespace-prefix attribute) prefix)
        (setf (%namespace-uri attribute) uri)))))
 
-(defmethod map-children (result-type fn (node attribute))
-  (and result-type (make-sequence result-type 0)))
-
-(defmethod unparse ((node attribute))
+(defmethod unparse ((node attribute) handler)
   (stp-error "attempt to unparse an attribute in isolation"))
