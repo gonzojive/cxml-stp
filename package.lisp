@@ -58,6 +58,12 @@
 	   #:make-attribute
 	   #:attribute-value
 	   #:rename-attribute
+
+	   #:comment
+	   #:data
+	   
+	   #:processing-instruction
+	   #:target
 	   )
   (:documentation
    "@code{cxml-stp} implements ___.
