@@ -144,6 +144,9 @@
 (defun list-attributes (element)
   (copy-list (%attributes element)))
 
+(defun map-attributes (result-type fn element)
+  (map result-type fn (%attributes element)))
+
 ;; fixme: NAMED-NODE-MIXIN?
 (defgeneric qualified-name (node))
 (defmethod qualified-name ((node element))

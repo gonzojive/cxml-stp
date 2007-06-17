@@ -27,10 +27,37 @@
 	   #:filter-children
 	   #:delete-child
 	   #:delete-nth-child
-
 	   #:insert-child
 	   #:delete-child-if
 	   #:replace-children
+
+	   ;; #:named-node
+	   #:local-name
+	   #:namespace-prefix
+	   #:namespace-uri
+	   #:of-name
+	   #:qualified-name
+
+	   #:element
+	   #:make-element
+	   #:add-attribute
+	   #:remove-attribute
+	   #:find-attribute-named
+	   #:find-attribute-if
+	   #:attribute-value-named
+	   #:attribute-value-if
+	   #:list-attributes
+	   #:map-attributes
+	   #:find-namespace
+	   #:find-local-namespace
+	   #:find-extra-namespace
+	   #:add-extra-namespace
+	   #:remove-extra-namespace
+
+	   #:attribute
+	   #:make-attribute
+	   #:attribute-value
+	   #:rename-attribute
 	   )
   (:documentation
    "@code{cxml-stp} implements ___.
