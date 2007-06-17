@@ -31,6 +31,9 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
+
+;;;; Class DOCUMENT
+
 (defclass document (parent-node) ())
 
 (defun make-document (document-element)
@@ -42,7 +45,7 @@
 (defmethod copy ((node document))
   (let ((result (make-instance 'document)))
     (insert-child result (copy (document-element node)) 0)
-    ;; fixme, das ist doch nicht schoen so
+    ;; zzz das ist doch nicht schoen so
     (let ((i 0))
       (do-children (child node)
 	(unless (typep child 'element)
@@ -62,12 +65,12 @@
     (document-type
      (when (document-type parent)
        (stp-error "attempt to insert multiple document types"))
-     (let ((j (child-position-if (lambda (x) (typep x 'element)) parent)))
+     (let ((j (child-position-if (alexandria:of-type 'element) parent)))
        (unless (<= i j)
 	 (stp-error
 	  "attempt to insert document type after document element"))))
     (element
-     (unless (zerop (length (%children parent)))
+     (unless (alexandria:emptyp (%children parent))
        (stp-error "attempt to insert multiple document elements")))
     (t
      (stp-error "not a valid child of a document: ~A" child))))
@@ -102,7 +105,7 @@
       (stp-error "attempt to insert document type after document element"))))
 
 (defun document-type (document)
-  (find-if (lambda (x) (typep x 'document-type)) (%children document)))
+  (find-if (alexandria:of-type 'document-type) (%children document)))
 
 ;; zzz gefaellt mir nicht
 (defun (setf document-type) (newval document)
@@ -117,7 +120,7 @@
 	  (insert-child document newval 0)))))
 
 (defun document-element (document)
-  (find-if (lambda (x) (typep x 'element)) (%children document)))
+  (find-if (alexandria:of-type 'element) (%children document)))
 
 ;; zzz gefaellt mir nicht
 (defun (setf document-element) (newval document)

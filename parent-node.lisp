@@ -31,14 +31,15 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
+
+;;;; Class PARENT-NODE
+
 (defclass parent-node (node)
-  ((%base-uri)
-   (%children :accessor %children)))
+  ((%base-uri :initform nil)
+   (%children :initform nil :accessor %children)))
 
 
 ;;; base URI
-
-(defvar *check-uri-syntax* t)
 
 (defgeneric %base-uri (node))
 (defmethod %base-uri ((node node)) (or (slot-value node '%base-uri) ""))
@@ -197,43 +198,42 @@
 	      (decf tbd)))))
     result))
 
-;; zzz optimize me
+;; zzz geht das nicht besser?
 (defmethod replace-children
     ((parent parent-node) seq &rest args &key start1 end1 start2 end2)
   (setf start1 (or start1 0))
   (setf start2 (or start2 0))
   (setf end1 (or end1 (length (%children parent))))
   (setf end2 (or end2 (length seq)))
-  (let* ((old (%children parent))
-	 (tmp (replace (copy-seq old)
-		       seq
-		       :start1 start1
-		       :end1 end1
-		       :start2 start2
-		       :end2 end2)))
-    (check-replacement-allowed parent tmp)
-    (setf (%children parent)
-	  (cond
-	    ((zerop (length tmp))
-	     nil)
-	    ((listp tmp)
-	     (make-array (length tmp)
-			 :fill-pointer (length tmp)
-			 :adjustable t
-			 :initial-contents tmp))
-	    (t
-	     tmp)))
-    (loop
-       for i from start1 below end1
-       for loser = (elt old i)
-       do
+  (let ((old (%children parent)))
+    (unless (and (<= 0 start1 (length old))
+		 (<= end1 (length old))
+		 (<= start1 end1))
+      (error "invalid bounding index designators"))
+    (let ((new (if old
+		   (replace (alexandria:copy-array old)
+			    seq
+			    :start1 start1
+			    :end1 end1
+			    :start2 start2
+			    :end2 end2)
+		   (make-array (length seq)
+			       :fill-pointer (length seq)
+			       :adjustable t
+			       :initial-contents seq))))
+      (check-replacement-allowed parent new)
+      (setf (%children parent) new)
+      (loop
+	 for i from start1 below end1
+	 for loser = (elt old i)
+	 do
 	 (unless (find loser seq :start start2 :end end2)
 	   (fill-in-base-uri loser)
 	   (setf (parent loser) nil)))
-    (loop
-       for i from start2 below end2
-       for winner = (elt seq i)
-       do
+      (loop
+	 for i from start2 below end2
+	 for winner = (elt seq i)
+	 do
 	 (unless (find winner old :start start1 :end end1)
-	   (setf (parent winner) parent))))
+	   (setf (parent winner) parent)))))
   t)

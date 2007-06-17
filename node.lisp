@@ -31,6 +31,14 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
+(defvar *check-uri-syntax* t)
+(defun check-namespace-uri (uri)
+  (when (and *check-uri-syntax* (not (search "://" uri)))
+    (warn "namespace URI does not look like an absolute URL: ~S" uri)))
+
+
+;;;; Class NODE
+
 (defclass node ()
   ((parent :reader parent :writer (setf %parent))))
 

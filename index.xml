@@ -31,7 +31,8 @@
     Download a cxml-stp
     <a href="http://www.lichteblau.com/cxml-stp/download/">tarball</a>.
     cxml-stp needs
-    <a href="http://common-lisp.net/project/cxml">Closure XML</a>.
+    <a href="http://common-lisp.net/project/cxml">Closure XML</a>
+    and <a href="http://common-lisp.net/project/alexandria/">Alexandria</a>.
     <a href="http://www.cliki.net/asdf">ASDF</a> is used for
     compilation.  Register the .asd file, e.g. by symlinking it,
     then compile cxml-stp using <tt>asdf:operate</tt>.

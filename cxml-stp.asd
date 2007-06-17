@@ -19,4 +19,4 @@
      (:file "node")
      (:file "parent-node")
      (:file "document"))
-    :depends-on (:cxml))
+    :depends-on (:cxml :alexandria))
