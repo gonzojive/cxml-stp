@@ -55,61 +55,85 @@
   (when (parent node)
     (stp-error "node already has a parent: ~A" node)))
 
-(defmethod insertion-allowed ((parent document) child pos)
+(defmethod check-insertion-allowed ((parent document) child i)
   (assert-orphan child)
   (typecase child
     ((or comment processing-instruction))
     (document-type
-     ;;      // doctypes nur falls noch keiner da, und nur vor rootelement
-     (error "FIXME"))
+     (when (document-type parent)
+       (stp-error "attempt to insert multiple document types"))
+     (let ((j (child-position-if (lambda (x) (typep x 'element)) parent)))
+       (unless (<= i j)
+	 (stp-error
+	  "attempt to insert document type after document element"))))
     (element
      (unless (zerop (length (%children parent)))
        (stp-error "attempt to insert multiple document elements")))
-    (t (stp-error "not a valid child of a document: ~A" child))))
+    (t
+     (stp-error "not a valid child of a document: ~A" child))))
+
+(defmethod check-deletion-allowed ((parent document) (child node) i)
+  nil)
+(defmethod check-deletion-allowed ((parent document) (child element) i)
+  (stp-error "attempt to remove document element"))
+
+(defmethod check-replacement-allowed ((parent document) children)
+  (unless children
+    (stp-error "attempt to remove document element"))
+  (let ((dt nil)
+	(de nil))
+    (loop
+       for i from 0
+       for c across children
+       do
+	 (typecase c
+	   ((or comment processing-instruction))
+	   (element
+	    (when de
+	      (stp-error "attempt to insert multiple document elements"))
+	    (setf de i))
+	   (document-type
+	    (when dt
+	      (stp-error "attempt to insert multiple document types"))
+	    (setf dt i))
+	   (t
+	    (stp-error "not a valid child of a document: ~A" c))))
+    (when (and dt (> dt de))
+      (stp-error "attempt to insert document type after document element"))))
 
 (defun document-type (document)
   (find-if (lambda (x) (typep x 'document-type)) (%children document)))
 
+;; zzz gefaellt mir nicht
 (defun (setf document-type) (newval document)
   (check-type newval document-type)
   (let ((old (document-type document)))
     (unless (eq newval old)
       (assert-orphan newval)
-      ;; gefaellt mir alles nicht
       (if old
 	  (let ((pos (position old (%children document))))
-	    (remove-child this pos)
+	    (delete-nth-child pos document)
 	    (insert-child document newval pos))
 	  (insert-child document newval 0)))))
 
 (defun document-element (document)
   (find-if (lambda (x) (typep x 'element)) (%children document)))
 
+;; zzz gefaellt mir nicht
 (defun (setf document-element) (newval document)
   (check-type newval element)
   (let ((old (document-element document)))
     (unless (eq newval old)
       (assert-orphan newval)
-      ;; gefaellt mir alles nicht
       (let ((pos (position old (%children document))))
-	(super-remove-child this pos)
-	(super-insert-child document newval pos)))))
+	(%nuke-nth-child document pos)
+	(insert-child document newval pos)))))
 
 (defmethod base-uri ((document document))
   (%base-uri document))
 
 (defmethod (setf base-uri) (newval (document document))
   (setf (%base-uri document) newval))
-
-;; FIXME
-;; (defmethod remove-child (()))
-;; -- aber nicht das DE
-
-(defmethod replace-child ((parent document) old new)
-  (typecase old
-    (document-type (setf (document-type parent) new))
-    (element (setf (document-element parent) new))
-    (t (call-next-method))))
 
 (defmethod string-value ((node document))
   (string-value (document-element node)))

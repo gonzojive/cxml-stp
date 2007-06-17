@@ -22,8 +22,11 @@
 	   #:nth-child
 	   #:find-child
 	   #:find-child-if
+	   #:child-position
+	   #:child-position-if
 	   #:filter-children
 	   #:delete-child
+	   #:delete-nth-child
 
 	   #:insert-child
 	   #:delete-child-if

@@ -90,9 +90,22 @@
     (predicate parent &rest args &key from-end (start 0) end key)
   (apply #'find-if predicate (%children parent) args))
 
+(defun child-position
+    (value parent &rest args &key from-end (start 0) end key test)
+  (apply #'position value (%children parent) args))
+
+(defun child-position-if
+    (predicate parent &rest args &key from-end (start 0) end key)
+  (apply #'position-if predicate (%children parent) args))
+
 (defun filter-children
     (predicate parent &rest args &key from-end (start 0) end count key)
   (apply #'remove-if-not predicate (%children parent) args))
+
+(defun delete-nth-child (idx parent)
+  (let ((old (%children parent)))
+    (delete-child-if (constantly t) parent :start idx :count 1)
+    (elt old idx)))
 
 (defun delete-child (child parent &key from-end test start end count key)
   (setf test (or test #'eql))
@@ -127,6 +140,15 @@
     (incf (fill-pointer children))
     (setf (elt children i) child))
   (setf (parent child) parent))
+
+(defun %nuke-nth-child (parent pos)
+  (let* ((c (%children parent))
+	 (loser (elt c pos)))
+    (when (typep loser 'element)
+      (fill-in-base-uri loser))
+    (cxml-dom::move c c (1+ i) i (- (length c) i 1))
+    (decf (fill-pointer c))
+    (setf (parent loser) nil)))
 
 (defmethod delete-child-if
     (predicate (parent parent-node)
