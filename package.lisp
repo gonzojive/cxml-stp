@@ -1,6 +1,8 @@
 (defpackage :cxml-stp
   (:use :cl)
-  (:export #:node
+  (:export #:*check-uri-syntax*
+
+	   #:node
 	   #:parent
 	   #:document
 	   #:root
@@ -15,6 +17,17 @@
 	   ;; #:query
 
 	   #:parent-node
+	   #:prepend-child
+	   #:append-child
+	   #:nth-child
+	   #:find-child
+	   #:find-child-if
+	   #:filter-children
+	   #:delete-child
+
+	   #:insert-child
+	   #:delete-child-if
+	   #:replace-children
 	   )
   (:documentation
    "@code{cxml-stp} implements ___.

@@ -1,7 +1,7 @@
 <page>
   <p>
-    A data structure for well-formed and namespace conforming XML
-    documents, designed for Common Lisp.
+    A data structure for well-formed XML documents, designed for Common
+    Lisp.
   </p>
 
   <h3>About</h3>
@@ -45,6 +45,12 @@
     Lisp implementations with Unicode support.
   </p>
 
+  <h3>Documentation</h3>
+  <p>
+    Please refer to the <a href="doc/index.html">API documentation</a>
+    for details.
+  </p>
+
   <h3>Example</h3>
   <p>
     To parse into STP, use an STP builder together with a function
@@ -57,11 +63,5 @@
     Serialize STP by sending SAX events for the tree to a serialization sink:
   </p>
   <pre class="code">(<a
-    href="doc/pages/cxml-stp__map-node.html">cxml-stp:map-node</a> *example* (cxml:make-character-stream-sink *standard-output*))</pre>
-
-  <h3>Documentation</h3>
-  <p>
-    Please refer to the <a href="doc/index.html">API documentation</a>
-    for details.
-  </p>
+    href="doc/pages/cxml-stp__unparse.html">cxml-stp:unparse</a> *example* (cxml:make-character-stream-sink *standard-output*))</pre>
 </page>
