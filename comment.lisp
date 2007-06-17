@@ -58,3 +58,12 @@
 
 (defmethod unparse ((node comment) handler)
   (sax:comment handler (data node)))
+
+
+;;; printing
+
+(defmethod slots-for-print-object append ((node comment))
+  '((:data data)))
+
+(defreader comment (data)
+  (setf (data this) data))

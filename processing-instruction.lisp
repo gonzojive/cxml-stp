@@ -68,3 +68,14 @@
 
 (defmethod unparse ((node processing-instruction) handler)
   (sax:processing-instruction handler (target node) (data node)))
+
+
+;;; printing
+
+(defmethod slots-for-print-object append ((node processing-instruction))
+  '((:data data)
+    (:target target)))
+
+(defreader text (data target)
+  (setf (data this) data)
+  (setf (target this) target))

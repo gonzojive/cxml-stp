@@ -98,3 +98,19 @@
   (unless (zerop (length (internal-subset node)))
     (sax:unparsed-internal-subset handler (internal-subset node)))
   (sax:end-dtd handler))
+
+
+;;; printing
+
+(defmethod slots-for-print-object append ((node document-type))
+  '((:root-element-name root-element-name)
+    (:system-id system-id)
+    (:public-id public-id)
+    (:internal-subset internal-subset)))
+
+(defreader document-type
+    (root-element-name system-id public-id internal-subset)
+  (setf (root-element-name this) root-element-name)
+  (setf (system-id this) system-id)
+  (setf (public-id this) public-id)
+  (setf (internal-subset this) internal-subset))

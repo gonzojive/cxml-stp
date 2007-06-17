@@ -39,7 +39,9 @@
 (defgeneric %base-uri (node))
 (defmethod %base-uri ((node node)) (or (slot-value node '%base-uri) ""))
 (defmethod (setf %base-uri) (newval (node node))
-  (when (and newval *check-uri-syntax* (not (search "://" newval)))
+  (when (and (plusp (length newval))
+	     *check-uri-syntax*
+	     (not (search "://" newval)))
     (warn "base URI does not look like an absolute URL: ~S" newval))
   (setf (slot-value node '%base-uri) (or newval "")))
 
@@ -72,8 +74,8 @@
 (defun prepend-child (child parent)
   (insert-child child parent 0))
 
-(defun append-child (child parent)
-  (insert-child child parent (length (%children parent))))
+(defun append-child (parent child)
+  (insert-child parent child (length (%children parent))))
 
 (defun nth-child (idx parent)
   (elt (%children parent) idx))
@@ -236,3 +238,8 @@
 	 (unless (find winner old :start start1 :end end1)
 	   (setf (%parent winner) parent)))))
   t)
+
+(defreader parent-node (base-uri children)
+  (setf (%base-uri this) base-uri)
+  (dolist (child children)
+    (append-child this child)))

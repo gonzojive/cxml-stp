@@ -31,11 +31,17 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
-(defclass attribute (leaf-node)
+(defclass named-node-mixin ()
   ((local-name :reader local-name :accessor %local-name)
-   (prefix :reader namespace-prefix :accessor %namespace-prefix)
-   (namespace-uri :reader namespace-uri :accessor %namespace-uri)
-   (value :accessor attribute-value)))
+   (prefix :initform nil
+	   :reader namespace-prefix
+	   :accessor %namespace-prefix)
+   (namespace-uri :initform nil
+		  :reader namespace-uri
+		  :accessor %namespace-uri)))
+
+(defclass attribute (leaf-node named-node-mixin)
+  ((value :accessor attribute-value)))
 
 (defclass comment (leaf-node)
   ((data :initarg :data :accessor data)))
@@ -48,17 +54,14 @@
 
 (defclass document (parent-node) ())
 
-(defclass element (parent-node)
-  ((local-name :reader local-name :accessor %local-name)
-   (prefix :reader namespace-prefix :accessor %namespace-prefix)
-   (namespace-uri :reader namespace-uri :accessor %namespace-uri)
-   (attributes :accessor %attributes)
-   (namespaces :accessor %namespaces)))
+(defclass element (parent-node named-node-mixin)
+  ((attributes :initform nil :accessor %attributes)
+   (namespaces :initform nil :accessor %namespaces)))
 
 (defclass leaf-node (node) ())
 
 (defclass node ()
-  ((parent :reader parent :writer (setf %parent))))
+  ((parent :initform nil :reader parent :writer (setf %parent))))
 
 (defclass parent-node (node)
   ((%base-uri :initform nil)

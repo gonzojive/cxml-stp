@@ -143,3 +143,5 @@
   (sax:start-document handler)
   (map nil (lambda (x) (unparse x handler)) (%children node))
   (sax:end-document handler))
+
+(defreader document ())

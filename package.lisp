@@ -4,7 +4,6 @@
 
 	   #:node
 	   #:parent
-	   #:document
 	   #:root
 	   #:base-uri
 	   #:detach
@@ -15,6 +14,10 @@
 	   #:copy
 	   #:unparse
 	   ;; #:query
+
+	   #:document
+	   #:make-document
+	   #:document-element
 
 	   #:parent-node
 	   #:prepend-child
@@ -65,21 +68,17 @@
 	   #:processing-instruction
 	   #:target
 
+	   #:document-type
+	   #:system-id
+	   #:public-id
+	   #:internal-subset
+
 	   #:text)
   (:documentation
-   "@code{cxml-stp} implements ___.
-    Relax NG} schema validation for Closure XML.
+   "STP is a data structure for well-formed XML documents, designed for
+    Common Lisp.  Inspired by XOM, it provides an alternative to the W3C's
+    DOM.
 
-    Support for @a[http://relaxng.org/compact-20021121.html]{Compact Syntax}
-    and @a[http://relaxng.org/compatibility-20011203.html]{DTD Compatibility}
-    is included.
-
-    @begin[Example]{section}
-    @begin{pre}(cxml:parse-file \"test.xml\"
-                 (cxml-rng:make-validator
-                  (cxml-rng:parse-schema #p\"test.rng\")))
-    @end{pre}
-    @end{section}
     @begin[Classes]{section}
     @aboutclass{schema}
     @aboutclass{rng-error}

@@ -54,3 +54,12 @@
 
 (defmethod unparse ((node text) handler)
   (sax:characters handler (data node)))
+
+
+;;; printing
+
+(defmethod slots-for-print-object append ((node text))
+  '((:data data)))
+
+(defreader text (data)
+  (setf (data this) data))

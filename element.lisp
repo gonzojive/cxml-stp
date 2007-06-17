@@ -44,7 +44,7 @@
     result))
 
 (defmethod copy ((node element))
-  (let ((result (make-instance 'document)))
+  (let ((result (make-instance 'element)))
     (setf (%namespace-prefix result) (%namespace-prefix node))
     (setf (%local-name result) (%local-name node))
     (setf (%namespace-uri result) (%namespace-uri node))
@@ -194,7 +194,7 @@
 (defgeneric (setf local-name) (newval node))
 (defmethod (setf local-name) (newval (node element))
   (check-nc-name newval)
-  (setf (%local-name node) node))
+  (setf (%local-name node) newval))
 
 (defun (setf namespace-uri) (newval element)
   (check-type element element)
@@ -226,18 +226,18 @@
 	(unless (or (equal uri (%namespace-uri element))
 		    (equal newval "xml"))
 	  (stp-error "conflicting declarations in namespace prefix change"))
-	(when (and (zerop (length (%namespace-uri element)))
+	(when (and (equal (%namespace-uri element) "") ;not for unintialized
 		   (not (zerop (length newval))))
 	  (stp-error "cannot assign prefix to element in no namespace"))))
   (setf (%namespace-prefix element) newval))
 
 (defun childp (a b)
   (loop
-     for node = a then (parent a)
+     for node = a then (parent node)
      while node
      thereis (eq node b)))
 
-(defmethod check-insertion-allowed ((parent document) child i)
+(defmethod check-insertion-allowed ((parent element) child i)
   (check-type child node)
   (assert-orphan child)
   (typecase child
@@ -248,9 +248,9 @@
     (t
      (stp-error "not a valid child of an element: ~A" child))))
 
-(defmethod check-deletion-allowed ((parent document) (child node) i))
+(defmethod check-deletion-allowed ((parent element) (child node) i))
 
-(defmethod check-replacement-allowed ((parent document) children)
+(defmethod check-replacement-allowed ((parent element) children)
   (map nil
        (lambda (x)
 	 (check-insertion-allowed parent x :dummy))
@@ -426,3 +426,33 @@
 		   (text (write-string (string-value child)))
 		   (element (recurse child))))))
       (recurse node))))
+
+
+;;; printing
+
+(defmethod slots-for-print-object append ((node named-node-mixin))
+  '((:local-name local-name)
+    (:namespace-prefix namespace-prefix)
+    (:namespace-uri namespace-uri)))
+
+(defmethod slots-for-print-object append ((node element))
+  '((:attributes %attributes)
+    (:extra-namespaces namespaces-for-print)))
+
+(defun namespaces-for-print (element)
+  (when (%namespaces element)
+    (loop
+       for prefix being each hash-key in (%namespaces element)
+       using (hash-value uri)
+       collect `(,prefix ,uri))))
+
+(defreader named-node-mixin (local-name namespace-prefix namespace-uri)
+  (setf (%local-name this) local-name)
+  (setf (%namespace-prefix this) namespace-prefix)
+  (setf (%namespace-uri this) namespace-uri))
+
+(defreader element (attributes extra-namespaces)
+  (dolist (a attributes)
+    (add-attribute this a))
+  (loop for (prefix uri) on extra-namespaces do
+       (add-extra-namespace this prefix uri)))

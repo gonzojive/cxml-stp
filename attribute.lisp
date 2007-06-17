@@ -125,3 +125,13 @@
 
 (defmethod unparse ((node attribute) handler)
   (stp-error "attempt to unparse an attribute in isolation"))
+
+
+;;; printing
+
+(defmethod slots-for-print-object append ((node attribute))
+  '((:value attribute-value)))
+
+(defreader attribute (value)
+  (setf (attribute-value this) value))
+

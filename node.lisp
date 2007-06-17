@@ -94,3 +94,101 @@
 ;;; (defun query (node xpath)
 ;;;   ;; fixme
 ;;;   )
+
+(defgeneric slots-for-print-object (node)
+  (:method-combination append))
+
+(defmethod slots-for-print-object append ((node parent-node))
+  '((:base-uri %base-uri)
+    (:children list-children)))
+
+(defmethod print-object ((object node) stream)
+  (when (and *print-readably* (not *read-eval*))
+    (error "cannot print STP nodes readably without *read-eval*"))
+  (if *print-pretty*
+      (pretty-print-node object stream)
+      (ugly-print-node object stream)))
+
+(defun pretty-print-node (node stream)
+  (let* ((slots (slots-for-print-object node))
+	 (constructor (class-name (class-of node)))
+	 (level *print-level*)
+	 (length *print-length*)
+	 (*print-level* nil)
+	 (*print-length* nil))
+    (pprint-logical-block (stream nil :prefix "#.(" :suffix ")")
+      (write constructor :stream stream)
+      (when (parent node)
+	(write-char #\space stream)
+	(pprint-newline :linear stream)
+	(pprint-pop)
+	(format stream "#| ~S of type ~A |#"
+		:parent
+		(type-of (parent node))))
+      (let ((remaining-slots slots))
+        (when remaining-slots
+          (write-char #\space stream)
+          (pprint-newline :linear stream)
+          (loop
+	     (pprint-pop)
+	     (destructuring-bind (key fn) (pop remaining-slots)
+	       (write key :stream stream)
+	       (write-char #\space stream)
+	       (pprint-newline :miser stream)
+	       (let ((value (funcall fn node))
+		     (*print-level* level)
+		     (*print-length* length))
+		 (unless (typep value '(or string null))
+		   (write-char #\' stream))
+		 (write value :stream stream))
+	       (when (null remaining-slots)
+		 (return))
+	       (write-char #\space stream)
+	       (pprint-newline :linear stream))))))))
+
+(defun ugly-print-node (node stream)
+  (let* ((slots (slots-for-print-object node))
+	 (constructor (class-name (class-of node)))
+	 (level *print-level*)
+	 (length *print-length*)
+	 (*print-level* nil)
+	 (*print-length* nil))
+    (write-string "#.(" stream)
+    (write constructor :stream stream)
+    (let ((remaining-slots slots))
+      (when remaining-slots
+	(write-char #\space stream)
+	(loop
+	   (destructuring-bind (key fn) (pop remaining-slots)
+	     (write key :stream stream)
+	     (write-char #\space stream)
+	     (let ((value (funcall fn node))
+		   (*print-level* level)
+		   (*print-length* length))
+	       (unless (typep value '(or string null))
+		 (write-char #\' stream))
+	       (write value :stream stream))
+	     (when (null remaining-slots)
+	       (return))
+	     (write-char #\space stream)))))
+    (write-string ")" stream)))
+
+(defgeneric reconstruct (node &key &allow-other-keys)
+  (:method-combination progn))
+
+(defmacro defreader (name (&rest args) &body body)
+  `(progn
+     (defun ,name (&rest keys)
+       "@unexport{}"
+       (let ((result (make-instance ',name)))
+	 (apply #'reconstruct result keys)
+	 result))
+     (defmethod reconstruct
+	 progn
+	 ((this ,name)
+	  &key ,@(loop
+		    for arg in args
+		    collect `(,arg (error "slot ~A missing in printed representation"
+					  ',arg)))
+	  &allow-other-keys)
+       ,@body)))
