@@ -36,11 +36,11 @@
 
 (defun make-text (data)
   (let ((result (make-instance 'text)))
-    (setf (data text) data)
+    (setf (data result) data)
     result))
 
 (defmethod copy ((node text))
-  (make-instance 'text :data (data text)))
+  (make-instance 'text :data (data node)))
 
 (defmethod string-value ((node attribute))
   (data node))

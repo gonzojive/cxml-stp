@@ -80,22 +80,27 @@
 
 (defun find-child
     (value parent &rest args &key from-end (start 0) end key test)
+  (declare (ignore from-end start end key test))
   (apply #'find value (%children parent) args))
 
 (defun find-child-if
     (predicate parent &rest args &key from-end (start 0) end key)
+  (declare (ignore from-end start end key))
   (apply #'find-if predicate (%children parent) args))
 
 (defun child-position
     (value parent &rest args &key from-end (start 0) end key test)
+  (declare (ignore from-end start end key test))
   (apply #'position value (%children parent) args))
 
 (defun child-position-if
     (predicate parent &rest args &key from-end (start 0) end key)
+  (declare (ignore from-end start end key))
   (apply #'position-if predicate (%children parent) args))
 
 (defun filter-children
     (predicate parent &rest args &key from-end (start 0) end count key)
+  (declare (ignore from-end start end count key))
   (apply #'remove-if-not predicate (%children parent) args))
 
 (defun delete-nth-child (idx parent)
@@ -110,6 +115,7 @@
 		   :from-end from-end
 		   :start start
 		   :end end
+		   :count count
 		   :key key))
 							    
 
@@ -132,24 +138,22 @@
     (setf (%children parent) (make-array 1 :fill-pointer 0 :adjustable t)))
   (let ((children (%children parent)))
     (cxml-dom::make-space children 1)
-    (move children children i (1+ i) (- (length children) i))
+    (cxml-dom::move children children i (1+ i) (- (length children) i))
     (incf (fill-pointer children))
     (setf (elt children i) child))
-  (setf (parent child) parent))
+  (setf (%parent child) parent))
 
-(defun %nuke-nth-child (parent pos)
+(defun %nuke-nth-child (parent i)
   (let* ((c (%children parent))
-	 (loser (elt c pos)))
+	 (loser (elt c i)))
     (when (typep loser 'element)
       (fill-in-base-uri loser))
     (cxml-dom::move c c (1+ i) i (- (length c) i 1))
     (decf (fill-pointer c))
-    (setf (parent loser) nil)))
+    (setf (%parent loser) nil)))
 
 (defmethod delete-child-if
-    (predicate (parent parent-node)
-     &rest args
-     &key from-end (start 0) end count key)
+    (predicate (parent parent-node) &key from-end (start 0) end count key)
   (let ((c (%children parent))
 	(result nil))
     (setf key (or key #'identity))
@@ -170,7 +174,7 @@
 		    (fill-in-base-uri loser))
 		  (cxml-dom::move c c (1+ i) i (- (length c) i 1))
 		  (decf (fill-pointer c))
-		  (setf (parent loser) nil)
+		  (setf (%parent loser) nil)
 		  (decf count)
 		  (setf result t)))
 	      (decf i)))
@@ -185,7 +189,7 @@
 		     (fill-in-base-uri loser))
 		   (cxml-dom::move c c (1+ i) i (- (length c) i 1))
 		   (decf (fill-pointer c))
-		   (setf (parent loser) nil)
+		   (setf (%parent loser) nil)
 		   (decf count)
 		   (setf result t))
 		  (t
@@ -195,7 +199,7 @@
 
 ;; zzz geht das nicht besser?
 (defmethod replace-children
-    ((parent parent-node) seq &rest args &key start1 end1 start2 end2)
+    ((parent parent-node) seq &key start1 end1 start2 end2)
   (setf start1 (or start1 0))
   (setf start2 (or start2 0))
   (setf end1 (or end1 (length (%children parent))))
@@ -224,11 +228,11 @@
 	 do
 	 (unless (find loser seq :start start2 :end end2)
 	   (fill-in-base-uri loser)
-	   (setf (parent loser) nil)))
+	   (setf (%parent loser) nil)))
       (loop
 	 for i from start2 below end2
 	 for winner = (elt seq i)
 	 do
 	 (unless (find winner old :start start1 :end end1)
-	   (setf (parent winner) parent)))))
+	   (setf (%parent winner) parent)))))
   t)

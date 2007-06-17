@@ -40,12 +40,12 @@
 	(cxml::split-qname name)
       (setf (namespace-prefix result) prefix)
       (setf (namespace-uri result) uri)
-      (setf (local-name result) uri))
+      (setf (local-name result) local-name))
     result))
 
 (defmethod copy ((node element))
   (let ((result (make-instance 'document)))
-    (setf (%prefix result) (%prefix node))
+    (setf (%namespace-prefix result) (%namespace-prefix node))
     (setf (%local-name result) (%local-name node))
     (setf (%namespace-uri result) (%namespace-uri node))
     (setf (%namespaces result)
@@ -60,7 +60,7 @@
 (defun copy-attributes (new old)
   (mapcar (lambda (x)
 	    (let ((y (copy x)))
-	      (setf (parent y) new)
+	      (setf (%parent y) new)
 	      y))
 	  (%attributes old)))
 
@@ -95,18 +95,18 @@
       (when (and other (not (equal other uri)))
 	(stp-error "collision with attribute namespace when adding ~A to ~A"
 		   attribute element)))
-    (let ((old (find-attribute element local-name uri)))
+    (let ((old (find-attribute-named element local-name uri)))
       (when old
 	(%remove-attribute old)))
     (%add-attribute attribute element)
-    (setf (parent attribute) element)))
+    (setf (%parent attribute) element)))
 
 (defun %add-attribute (attribute element)
   (push attribute (%attributes element)))
 
 (defun %remove-attribute (attribute)
   (alexandria:deletef (%attributes (parent attribute)) attribute)
-  (setf (parent attribute) nil))
+  (setf (%parent attribute) nil))
 
 (defun remove-attribute (element attribute)
   (check-type element element)
@@ -194,7 +194,7 @@
 (defgeneric (setf local-name) (newval node))
 (defmethod (setf local-name) (newval (node element))
   (check-nc-name newval)
-  (setf (%local-name element) newval))
+  (setf (%local-name node) node))
 
 (defun (setf namespace-uri) (newval element)
   (check-type element element)
@@ -223,8 +223,8 @@
     (check-nc-name newval))
   (let ((uri (find-local-namespace newval element)))
     (if uri
-	(unless (or (equals uri (%namespace-uri element))
-		    (equals newval "xml"))
+	(unless (or (equal uri (%namespace-uri element))
+		    (equal newval "xml"))
 	  (stp-error "conflicting declarations in namespace prefix change"))
 	(when (and (zerop (length (%namespace-uri element)))
 		   (not (zerop (length newval))))
@@ -258,17 +258,17 @@
 
 ;; trivial optimization
 (defmethod replace-children
-    ((parent element) seq &rest args &key start1 end1 start2 end2)
+    ((parent element) seq &key start1 end1 start2 end2)
   (setf start1 (or start1 0))
   (setf start2 (or start2 0))
   (setf end1 (or end1 (length (%children parent))))
   (setf end2 (or end2 (length seq)))
   (cond
     ((and (eql (- start1 end1) (length (%children parent)))
-	  (eql (start2 end2)))
-      (do-children (old parent)
+	  (eql start2 end2))
+      (do-children (loser parent)
 	(fill-in-base-uri loser)
-	(setf (parent loser) nil))
+	(setf (%parent loser) nil))
       (setf (fill-pointer (%children parent)) 0))
     (t
      (call-next-method)))
@@ -350,9 +350,9 @@
 				:qname "xmlns"
 				:value uri))
 			   attrs)))))
-	     (collect-local-namespaces element))
+	     (collect-local-namespaces node))
     (sax:start-element handler uri local-name qname attrs)
-    (map nil #'unparse (%children node))
+    (map nil (lambda (x) (unparse x handler)) (%children node))
     (sax:end-element handler uri local-name qname)))
 
 (defmethod (setf base-uri) (newval (node element))
@@ -376,7 +376,7 @@
 	(parent (parent node)))
     (if parent
 	(puri:merge-uris xml-base (base-uri parent))
-	base-uri)))
+	xml-base)))
 
 ;;; below a literal translation of XOM's Java code for BASE-URI.
 ;;; Unfortunately I don't understand a word of what's going on here, hence
@@ -422,7 +422,7 @@
     (labels ((recurse (x)
 	       (do-children (child x)
 		 (typecase child
-		   ((comment processing-instruction))
+		   ((or comment processing-instruction))
 		   (text (write-string (string-value child)))
 		   (element (recurse child))))))
       (recurse node))))

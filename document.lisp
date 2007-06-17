@@ -141,5 +141,5 @@
 
 (defmethod unparse ((node document) handler)
   (sax:start-document handler)
-  (map nil #'unparse (%children node))
+  (map nil (lambda (x) (unparse x handler)) (%children node))
   (sax:end-document handler))

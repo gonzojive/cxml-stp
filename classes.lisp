@@ -33,7 +33,7 @@
 
 (defclass attribute (leaf-node)
   ((local-name :reader local-name :accessor %local-name)
-   (prefix :reader namespace-prefix :accessor %prefix)
+   (prefix :reader namespace-prefix :accessor %namespace-prefix)
    (namespace-uri :reader namespace-uri :accessor %namespace-uri)
    (value :accessor attribute-value)))
 
@@ -50,7 +50,7 @@
 
 (defclass element (parent-node)
   ((local-name :reader local-name :accessor %local-name)
-   (prefix :reader namespace-prefix :accessor %prefix)
+   (prefix :reader namespace-prefix :accessor %namespace-prefix)
    (namespace-uri :reader namespace-uri :accessor %namespace-uri)
    (attributes :accessor %attributes)
    (namespaces :accessor %namespaces)))

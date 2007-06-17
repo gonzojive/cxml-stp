@@ -36,14 +36,14 @@
 
 (defun make-processing-instruction (target data)
   (let ((result (make-instance 'processing-instruction)))
-    (setf (target processing-instruction) target)
-    (setf (data processing-instruction) data)
+    (setf (target result) target)
+    (setf (data result) data)
     result))
 
 (defmethod copy ((node processing-instruction))
   (make-instance 'processing-instruction
-    :target (target processing-instruction)
-    :data (data processing-instruction)))
+    :target (target node)
+    :data (data node)))
 
 (defmethod string-value ((node attribute))
   (data node))

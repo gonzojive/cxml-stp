@@ -38,7 +38,7 @@
   (let ((result (make-instance 'attribute)))
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)
-      (setf (local-name result) uri)
+      (setf (local-name result) local-name)
       (rename-attribute result prefix uri)
       (setf (attribute-value result) value))
     result))
@@ -53,7 +53,7 @@
 
 (defmethod detach ((node attribute))
   (when (parent node)
-    (delete-attribute node (parent node))))
+    (remove-attribute node (parent node))))
 
 (defmethod string-value ((node attribute))
   (attribute-value node))

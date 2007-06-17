@@ -92,9 +92,9 @@
 
 (defmethod unparse ((node document-type) handler)
   (sax:start-dtd handler
-		 (dom:name doctype)
-		 (dom:public-id doctype)
-		 (dom:system-id doctype))
+		 (dom:name node)
+		 (dom:public-id node)
+		 (dom:system-id node))
   (unless (zerop (length (internal-subset node)))
     (sax:unparsed-internal-subset handler (internal-subset node)))
   (sax:end-dtd handler))

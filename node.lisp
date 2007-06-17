@@ -36,6 +36,14 @@
   (when (and *check-uri-syntax* (not (search "://" uri)))
     (warn "namespace URI does not look like an absolute URL: ~S" uri)))
 
+(define-condition rng-error (simple-error)
+  ()
+  (:documentation "The class of all STP errors."))
+
+(defun stp-error (fmt &rest args)
+  "@unexport{}"
+  (error 'rng-error :format-control fmt :format-arguments args))
+
 
 ;;;; Class NODE
 
@@ -73,7 +81,7 @@
 (defgeneric map-children (result-type function node))
 (defmacro do-children ((var node &optional result) &body body)
   `(block nil
-     (map-children (lambda (,var) ,@body) ,node)
+     (map-children nil (lambda (,var) ,@body) ,node)
      ,result))
 (defun list-children (node)
   (map-children 'list #'identity node))

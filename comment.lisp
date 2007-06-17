@@ -36,11 +36,11 @@
 
 (defun make-comment (data)
   (let ((result (make-instance 'comment)))
-    (setf (data comment) data)
+    (setf (data result) data)
     result))
 
 (defmethod copy ((node comment))
-  (make-instance 'comment :data (data comment)))
+  (make-instance 'comment :data (data node)))
 
 (defmethod string-value ((node attribute))
   (data node))
