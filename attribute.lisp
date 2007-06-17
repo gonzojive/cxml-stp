@@ -57,6 +57,10 @@
     (setf (attribute-value result) (attribute-value node))
     result))
 
+(defmethod detach ((node attribute))
+  (when (parent node)
+    (delete-attribute node (parent node))))
+
 (defmethod string-value ((node attribute))
   (attribute-value node))
 
