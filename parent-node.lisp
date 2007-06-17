@@ -34,11 +34,6 @@
 
 ;;;; Class PARENT-NODE
 
-(defclass parent-node (node)
-  ((%base-uri :initform nil)
-   (%children :initform nil :accessor %children)))
-
-
 ;;; base URI
 
 (defgeneric %base-uri (node))

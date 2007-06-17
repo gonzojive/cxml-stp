@@ -34,9 +34,6 @@
 
 ;;;; Class COMMENT
 
-(defclass comment (leaf-node)
-  ((data :initarg :data :accessor data)))
-
 (defun make-comment (data)
   (let ((result (make-instance 'comment)))
     (setf (data comment) data)

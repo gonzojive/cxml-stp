@@ -34,13 +34,6 @@
 
 ;;;; Class ELEMENT
 
-(defclass element (parent-node)
-  ((local-name :reader local-name :accessor (setf %local-name))
-   (prefix :reader namespace-prefix :accessor %prefix)
-   (namespace-uri :reader namespace-uri :accessor (setf %namespace-uri))
-   (attributes :accessor %attributes)
-   (namespaces :accessor %namespaces)))
-
 (defun make-element (name &optional (uri ""))
   (let ((result (make-instance 'element)))
     (multiple-value-bind (prefix local-name)
@@ -192,7 +185,7 @@
        (every #'cxml::name-rune-p str)))
 
 (defun nc-name-p (str)
-  (and (cxml-types::namep str) (cxml::nc-name-p str)))
+  (and (namep str) (cxml::nc-name-p str)))
 
 (defun check-nc-name (str)
   (unless (nc-name-p str)

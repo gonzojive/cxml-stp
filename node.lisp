@@ -39,9 +39,6 @@
 
 ;;;; Class NODE
 
-(defclass node ()
-  ((parent :reader parent :writer (setf %parent))))
-
 (defgeneric string-value (node))
 
 (defun document (node)

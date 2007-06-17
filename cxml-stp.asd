@@ -16,6 +16,7 @@
     :serial t
     :components
     ((:file "package")
+     (:file "classes")
      (:file "node")
      (:file "parent-node")
      (:file "leaf-node")

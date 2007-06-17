@@ -34,12 +34,6 @@
 
 ;;;; Class DOCUMENT-TYPE
 
-(defclass document-type (leaf-node)
-  ((root-element-name :accessor root-element-name)
-   (system-id :accessor system-id)
-   (public-id :accessor public-id)
-   (internal-subset :accessor internal-subset)))
-
 (defun make-document-type
     (root-element-name &optional system-id public-id internal-subset)
   (let ((result (make-instance 'document-type)))

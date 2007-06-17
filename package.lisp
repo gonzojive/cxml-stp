@@ -64,7 +64,8 @@
 	   
 	   #:processing-instruction
 	   #:target
-	   )
+
+	   #:text)
   (:documentation
    "@code{cxml-stp} implements ___.
     Relax NG} schema validation for Closure XML.

@@ -31,26 +31,42 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
+(defclass attribute (leaf-node)
+  ((local-name :reader local-name :accessor %local-name)
+   (prefix :reader namespace-prefix :accessor %prefix)
+   (namespace-uri :reader namespace-uri :accessor %namespace-uri)
+   (value :accessor attribute-value)))
 
-;;;; Class TEXT
+(defclass comment (leaf-node)
+  ((data :initarg :data :accessor data)))
 
-(defun make-text (data)
-  (let ((result (make-instance 'text)))
-    (setf (data text) data)
-    result))
+(defclass document-type (leaf-node)
+  ((root-element-name :accessor root-element-name)
+   (system-id :accessor system-id)
+   (public-id :accessor public-id)
+   (internal-subset :accessor internal-subset)))
 
-(defmethod copy ((node text))
-  (make-instance 'text :data (data text)))
+(defclass document (parent-node) ())
 
-(defmethod string-value ((node attribute))
-  (data node))
+(defclass element (parent-node)
+  ((local-name :reader local-name :accessor %local-name)
+   (prefix :reader namespace-prefix :accessor %prefix)
+   (namespace-uri :reader namespace-uri :accessor %namespace-uri)
+   (attributes :accessor %attributes)
+   (namespaces :accessor %namespaces)))
 
-(defmethod (setf data) :before (newval (node text))
-  (unless newval (setf newval ""))
-  (unless (xml-characters-p newval)
-    (stp-error "text includes characters that cannot be ~
-                represented in XML at all: ~S"
-	       newval)))
+(defclass leaf-node (node) ())
 
-(defmethod unparse ((node text) handler)
-  (sax:characters handler (data node)))
+(defclass node ()
+  ((parent :reader parent :writer (setf %parent))))
+
+(defclass parent-node (node)
+  ((%base-uri :initform nil)
+   (%children :initform nil :accessor %children)))
+
+(defclass processing-instruction (leaf-node)
+  ((target :initarg :target :accessor target)
+   (data :initarg :data :accessor data)))
+
+(defclass text (leaf-node)
+  ((data :initarg :data :accessor data)))

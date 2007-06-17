@@ -34,8 +34,6 @@
 
 ;;;; Class DOCUMENT
 
-(defclass document (parent-node) ())
-
 (defun make-document (document-element)
   (check-type document-element element)
   (let ((result (make-instance 'document)))

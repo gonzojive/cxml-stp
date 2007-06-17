@@ -34,12 +34,6 @@
 
 ;;;; Class ATTRIBUTE
 
-(defclass attribute (leaf-node)
-  ((local-name :reader local-name :accessor (setf %local-name))
-   (prefix :reader namespace-prefix :accessor %prefix)
-   (namespace-uri :reader namespace-uri :accessor (setf %namespace-uri))
-   (value :accessor attribute-value)))
-
 (defun make-attribute (value name &optional (uri ""))
   (let ((result (make-instance 'attribute)))
     (multiple-value-bind (prefix local-name)

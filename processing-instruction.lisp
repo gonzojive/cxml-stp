@@ -34,10 +34,6 @@
 
 ;;;; Class PROCESSING-INSTRUCTION
 
-(defclass processing-instruction (leaf-node)
-  ((target :initarg :target :accessor target)
-   (data :initarg :data :accessor data)))
-
 (defun make-processing-instruction (target data)
   (let ((result (make-instance 'processing-instruction)))
     (setf (target processing-instruction) target)
