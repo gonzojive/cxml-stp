@@ -22,5 +22,6 @@
      (:file "document")
      (:file "element")
      (:file "attribute")
-     (:file "document-type"))
+     (:file "document-type")
+     (:file "comment"))
     :depends-on (:cxml :alexandria))
