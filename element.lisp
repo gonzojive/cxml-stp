@@ -45,9 +45,9 @@
   (let ((result (make-instance 'element)))
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)
-      (change-namespace-prefix result prefix)
-      (change-namespace-uri result uri)
-      (change-local-name result uri))
+      (setf (namespace-prefix result) prefix)
+      (setf (namespace-uri result) uri)
+      (setf (local-name result) uri))
     result))
 
 (defmethod copy ((node element))
@@ -144,9 +144,11 @@
 (defun list-attributes (element)
   (copy-list (%attributes element)))
 
-(defun qualified-name (element)
-  (let ((prefix (namespace-prefix element))
-	(local-name (local-name element)))
+;; fixme: NAMED-NODE-MIXIN?
+(defgeneric qualified-name (node))
+(defmethod qualified-name ((node element))
+  (let ((prefix (namespace-prefix node))
+	(local-name (local-name node)))
     (if (plusp (length prefix))
 	(format nil "~A:~A" prefix local-name)
 	local-name)))
@@ -193,11 +195,13 @@
   (unless (nc-name-p str)
     (stp-error "not an NCName: ~A" str)))
 
-(defun (setf local-name) (newval element)
+(defgeneric (setf local-name) (newval node))
+(defmethod (setf local-name) (newval (node element))
   (check-nc-name newval)
   (setf (%local-name element) newval))
 
 (defun (setf namespace-uri) (newval element)
+  (check-type element element)
   (unless newval
     (setf newval ""))
   (unless (equal newval (%namespace-uri element))
@@ -209,14 +213,14 @@
 	      (find-attribute-namespace (%namespace-prefix element) element))
       (stp-error "cannot change element URI because of a conflicting ~
                   declaration for its prefix"))
-    (when (= (+ (if (equal newval "http://www.w3.org/XML/1998/namespace") 1 0)
-		(if (equal (%namespace-prefix element) "xml") 1 0))
-	     1)
+    (when (xor (equal newval "http://www.w3.org/XML/1998/namespace")
+	       (equal (%namespace-prefix element) "xml"))
       (stp-error "prefix/URI mismatch for `xml' namespace"))
     (setf (%namespace-uri element) newval))
   newval)
 
 (defun (setf namespace-prefix) (newval element)
+  (check-type element element)
   (unless newval
     (setf newval ""))
   (when (plusp (length newval))

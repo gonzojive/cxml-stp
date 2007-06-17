@@ -18,5 +18,7 @@
     ((:file "package")
      (:file "node")
      (:file "parent-node")
-     (:file "document"))
+     (:file "document")
+     (:file "element")
+     (:file "attribute"))
     :depends-on (:cxml :alexandria))
