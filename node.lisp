@@ -259,6 +259,9 @@
 	 (length *print-length*)
 	 (*print-level* nil)
 	 (*print-length* nil))
+    (when (eq constructor 'document-type)
+      ;; zzz FIXME!
+      (setf constructor '%document-type))
     (write-string "#.(" stream)
     (write constructor :stream stream)
     (let ((remaining-slots slots))
@@ -283,18 +286,22 @@
   (:method-combination progn))
 
 (defmacro defreader (name (&rest args) &body body)
-  `(progn
-     (defun ,name (&rest keys)
-       "@unexport{}"
-       (let ((result (make-instance ',name)))
-	 (apply #'reconstruct result keys)
-	 result))
-     (defmethod reconstruct
-	 progn
-	 ((this ,name)
-	  &key ,@(loop
-		    for arg in args
-		    collect `(,arg (error "slot ~A missing in printed representation"
-					  ',arg)))
-	  &allow-other-keys)
-       ,@body)))
+  (let ((fn name))
+    (when (eq fn 'document-type)
+      ;; zzz FIXME!
+      (setf fn '%document-type))
+    `(progn
+       (defun ,fn (&rest keys)
+	 "@unexport{}"
+	 (let ((result (make-instance ',name)))
+	   (apply #'reconstruct result keys)
+	   result))
+       (defmethod reconstruct
+	   progn
+	   ((this ,name)
+	    &key ,@(loop
+		      for arg in args
+		      collect `(,arg (error "slot ~A missing in printed representation"
+					    ',arg)))
+	    &allow-other-keys)
+	 ,@body))))

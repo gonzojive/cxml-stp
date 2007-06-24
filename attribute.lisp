@@ -59,7 +59,7 @@
   (value node))
 
 ;; zzz WRONG! this excludes surrogates, which would only be correct on SBCL
-;; if we used its full character range, and is always incorrect on allegro. 
+;; if we used its full character range, and is always incorrect on allegro.
 ;; (The rest of cxml repeats the same mistake though.)
 (defun xml-characters-p (str)
   (every (lambda (c)
@@ -127,4 +127,3 @@
 
 (defreader attribute (value)
   (setf (value this) value))
-

@@ -57,7 +57,7 @@
        (every #'cxml::name-rune-p str)))
 
 (defun check-xml-name (str)
-  (unless (zerop (length str))
+  (unless (namep str)
     (stp-error "not a Name: ~S" str)))
 
 (defmethod (setf root-element-name) :before (newval (node document-type))
@@ -76,6 +76,8 @@
 		   c)))))
 
 (defmethod (setf public-id) :before (newval (node document-type))
+  (when (equal newval "")
+    (setf newval nil))
   (when (and newval (null (system-id node)))
     (stp-error "attempt to set public-id, but no system-id is set"))
   ;; zzz hier muss mehr geprueft werden?
@@ -84,6 +86,8 @@
     (stp-error "malformed public id: ~S" newval)))
 
 (defmethod (setf system-id) :before (newval (node document-type))
+  (when (equal newval "")
+    (setf newval nil))
   (when (and (public-id node) (null newval))
     (stp-error "attempt to remove system-id, but public-id is set")))
 
@@ -92,9 +96,9 @@
 
 (defmethod serialize ((node document-type) handler)
   (sax:start-dtd handler
-		 (dom:name node)
-		 (dom:public-id node)
-		 (dom:system-id node))
+		 (root-element-name node)
+		 (public-id node)
+		 (system-id node))
   (unless (zerop (length (internal-subset node)))
     (sax:unparsed-internal-subset handler (internal-subset node)))
   (sax:end-dtd handler))

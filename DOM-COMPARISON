@@ -12,7 +12,7 @@ ProcessingInstruction         PROCESSING-INSTRUCTION
 Text                          TEXT
 
 CDATASection                  none
-CharacterData                 none (TEXT and COMMENT are disjoint!)
+CharacterData                 none (TEXT and COMMENT are disjoint)
 DocumentFragment              none (use DOCUMENT)
 DOMImplementation             none
 Entity                        none (but recorded in INTERNAL-SUBSET)
@@ -23,8 +23,8 @@ Notation                      none (but recorded in INTERNAL-SUBSET)
 
 Type checks
 ========================================================================
-ELEMENT_NODE                  [ use TYPEP and TYPE-OF instead
-ATTRIBUTE_NODE		        .
+ELEMENT_NODE                  [ none, use TYPEP or TYPE-OF instead
+ATTRIBUTE_NODE                  .
 TEXT_NODE                       .
 CDATA_SECTION_NODE              .
 ENTITY_REFERENCE_NODE           .
@@ -68,68 +68,68 @@ Node.normalize                         not yet
 Node.isSupported                       none
 Node.namespaceURI                      [method on ATTRIBUTE/ELEMENT, not NODE]
                                          NAMESPACE-URI
-Node.prefix			       [method on ATTRIBUTE/ELEMENT, not NODE]
+Node.prefix                            [method on ATTRIBUTE/ELEMENT, not NODE]
                                          NAMESPACE-PREFIX
-Node.localName			       [method on ATTRIBUTE/ELEMENT, not NODE]
+Node.localName                         [method on ATTRIBUTE/ELEMENT, not NODE]
                                          LOCAL-NAME
 Node.hasAttributes                     not yet (seems uninteresting?)
-NodeList.item			       [method on NODE, not NodeList]
-				         NTH-CHILD
-NodeList.length			       [method on NODE, not NodeList]
-				         COUNT-CHILDREN, COUNT-CHILDREN-IF
+NodeList.item                          [method on NODE, not NodeList]
+                                         NTH-CHILD
+NodeList.length                        [method on NODE, not NodeList]
+                                         COUNT-CHILDREN, COUNT-CHILDREN-IF
 NameNodeMap.*                          see various ATTRIBUTE-related functions
-CharacterData.data		       [method on TEXT/COMMENT]
-				         DATA
-CharacterData.length		       none (use DATA and LENGTH)
-CharacterData.substringData	       none (use DATA and SUBSEQ)
-CharacterData.appendData	       none (use (SETF DATA) and CONCATENATE)
-CharacterData.insertData	       none (use (SETF DATA) and REPLACE)
-CharacterData.deleteData	       none (use (SETF DATA) and REPLACE)
-CharacterData.replaceData	       none (use (SETF DATA) and REPLACE)
-Attr.name			       QUALIFIED-NAME
-Attr.specified			       none
-Attr.value			       VALUE
-Attr.ownerElement		       none, use PARENT
-Element.tagName			       QUALIFIED-NAME
-Element.getAttribute		       ATTRIBUTE-VALUE
-Element.setAttribute		       (SETF ATTRIBUTE-VALUE)
-Element.removeAttribute		       node, use REMOVE-ATTRIBUTE
-				         with FIND-ATTRIBUTE-NAMED
-Element.getAttributeNode	       FIND-ATTRIBUTE-NAMED, FIND-ATTRIBUTE-IF
-Element.setAttributeNode	       ADD-ATTRIBUTE
-Element.removeAttributeNode	       REMOVE-ATTRIBUTE
+CharacterData.data                     [method on TEXT/COMMENT]
+                                         DATA
+CharacterData.length                   none (use DATA and LENGTH)
+CharacterData.substringData            none (use DATA and SUBSEQ)
+CharacterData.appendData               none (use (SETF DATA) and CONCATENATE)
+CharacterData.insertData               none (use (SETF DATA) and REPLACE)
+CharacterData.deleteData               none (use (SETF DATA) and REPLACE)
+CharacterData.replaceData              none (use (SETF DATA) and REPLACE)
+Attr.name                              QUALIFIED-NAME
+Attr.specified                         none
+Attr.value                             VALUE
+Attr.ownerElement                      none, use PARENT
+Element.tagName                        QUALIFIED-NAME
+Element.getAttribute                   ATTRIBUTE-VALUE
+Element.setAttribute                   (SETF ATTRIBUTE-VALUE)
+Element.removeAttribute                none, use REMOVE-ATTRIBUTE
+                                         with FIND-ATTRIBUTE-NAMED
+Element.getAttributeNode               FIND-ATTRIBUTE-NAMED, FIND-ATTRIBUTE-IF
+Element.setAttributeNode               ADD-ATTRIBUTE
+Element.removeAttributeNode            REMOVE-ATTRIBUTE
 Element.hasAttribute                   FIND-ATTRIBUTE, FIND-ATTRIBUTE-IF
 Element.getAttributeNS                 [ see above, we /only/ have functions
 Element.setAttributeNS                   with namespace support
-Element.removeAttributeNS		 .
-Element.getAttributeNodeNS		 .
-Element.setAttributeNodeNS		 .
-Element.removeAttributeNodeNS		 .
-Element.hasAttributeNS			 . ]
+Element.removeAttributeNS                .
+Element.getAttributeNodeNS               .
+Element.setAttributeNodeNS               .
+Element.removeAttributeNodeNS            .
+Element.hasAttributeNS                   . ]
 Text.splitText                         not (yet?)
-DocumentType.name		       ROOT-ELEMENT-NAME
-DocumentType.entities		       none, use INTERNAL-SUBSET
-DocumentType.notations		       none, use INTERNAL-SUBSET
-DocumentType.publicId		       PUBLIC-ID
-DocumentType.systemId		       SYSTEM-ID
-DocumentType.internalSubset	       INTERNAL-SUBSET
-ProcessingInstruction.target	       TARGET
-ProcessingInstruction.data	       DATA
-Document.doctype		       DOCUMENT-TYPE
-Document.implementation		       none
-Document.documentElement	       DOCUMENT-ELEMENT
-Document.createElement		       [ not a method ] MAKE-ELEMENT
-Document.createDocumentFragment	       none, use MAKE-DOCUMENT
-Document.createTextNode		       [ not a method ] MAKE-TEXT
-Document.createComment		       [ not a method ] MAKE-COMMENT
-Document.createCDATASection	       none
+DocumentType.name                      ROOT-ELEMENT-NAME
+DocumentType.entities                  none, use INTERNAL-SUBSET
+DocumentType.notations                 none, use INTERNAL-SUBSET
+DocumentType.publicId                  PUBLIC-ID
+DocumentType.systemId                  SYSTEM-ID
+DocumentType.internalSubset            INTERNAL-SUBSET
+ProcessingInstruction.target           TARGET
+ProcessingInstruction.data             DATA
+Document.doctype                       DOCUMENT-TYPE
+Document.implementation                none
+Document.documentElement               DOCUMENT-ELEMENT
+Document.createElement                 [ not a method ] MAKE-ELEMENT
+Document.createDocumentFragment        none, use MAKE-DOCUMENT
+Document.createTextNode                [ not a method ] MAKE-TEXT
+Document.createComment                 [ not a method ] MAKE-COMMENT
+Document.createCDATASection            none
 Document.createProcessingInstruction   [ not a method ]
-				         MAKE-PROCESSING-INSTRUCTION
-Document.createAttribute	       [ not a method ] MAKE-ATTRIBUTE
-Document.createEntityReference	       none
-Document.getElementsByTagName	       (FILTER-RECURSIVELY (OF-NAME "x") node)
-Document.importNode		       COPY
-Document.createElementNS	       [ see above, we /only/ have functions
-Document.createAttributeNS	         with namespace support
-Document.getElementsByTagNameNS		 ]
+                                         MAKE-PROCESSING-INSTRUCTION
+Document.createAttribute               [ not a method ] MAKE-ATTRIBUTE
+Document.createEntityReference         none
+Document.getElementsByTagName          (FILTER-RECURSIVELY (OF-NAME "x") node)
+Document.importNode                    COPY
+Document.createElementNS               [ see above, we /only/ have functions
+Document.createAttributeNS               with namespace support
+Document.getElementsByTagNameNS          ]
 Document.getElementById                not yet

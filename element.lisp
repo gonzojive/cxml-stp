@@ -313,7 +313,8 @@
     (setf (gethash (%namespace-prefix element) result)
 	  (%namespace-uri element))
     (dolist (a (%attributes element))
-      (setf (gethash (namespace-prefix a) result) (namespace-uri a)))
+      (when (plusp (length (namespace-prefix a)))
+	(setf (gethash (namespace-prefix a) result) (namespace-uri a))))
     result))
 
 (defmethod serialize ((node element) handler)

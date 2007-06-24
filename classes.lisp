@@ -48,9 +48,9 @@
 
 (defclass document-type (leaf-node)
   ((root-element-name :accessor root-element-name)
-   (system-id :accessor system-id)
-   (public-id :accessor public-id)
-   (internal-subset :accessor internal-subset)))
+   (system-id :initform nil :accessor system-id)
+   (public-id :initform nil :accessor public-id)
+   (internal-subset :initform nil :accessor internal-subset)))
 
 (defclass document (parent-node) ())
 
