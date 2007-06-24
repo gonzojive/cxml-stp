@@ -64,12 +64,12 @@
      while p
      finally (return q)))
 
-(defgeneric base-uri (node)) ;fixme: hier muessen wir wissen, ob specified
-(defmethod base-uri ((node node))
-  (let ((parent (parent node)))
-    (if parent
-        (base-uri parent)
-        "")))
+;; (defgeneric base-uri (node)) ;fixme: hier muessen wir wissen, ob specified
+;; (defmethod base-uri ((node node))
+;;   (let ((parent (parent node)))
+;;     (if parent
+;;         (base-uri parent)
+;;         "")))
 
 (defgeneric detach (node))
 (defmethod detach ((node node))
@@ -86,7 +86,9 @@
 (defmacro do-children ((var node &optional result) &body body)
   `(block nil
      (map-children nil (lambda (,var) ,@body) ,node)
-     ,result))
+     (let (,var nil)
+       (declare (ignorable ,var))
+       ,result)))
 
 (defun list-children (node)
   (map-children 'list #'identity node))
@@ -104,6 +106,35 @@
 	 (l (length c)))
     (when (plusp l)
       (elt c (1- l)))))
+
+(defun previous-sibling (node)
+  (let ((p (parent node)))
+    (unless p
+      (stp-error "node has no parent"))
+    (let ((idx (1- (child-position node p))))
+      (when (minusp idx)
+	(stp-error "node has no previous sibling"))
+      (nth-child idx p))))
+
+(defun next-sibling (node)
+  (let ((p (parent node)))
+    (unless p
+      (stp-error "node has no parent"))
+    (let ((idx (1+ (child-position node p)))
+	  (c (%children p)))
+      (when (eql idx (length c))
+	(stp-error "node has no next sibling"))
+      (nth-child idx p))))
+
+(defun count-children
+    (value parent &rest args &key from-end (start 0) end key test)
+  (declare (ignore from-end start end key test))
+  (apply #'count value (%children parent) args))
+
+(defun count-children-if
+    (value parent &rest args &key from-end (start 0) end key test)
+  (declare (ignore from-end start end key test))
+  (apply #'count-if value (%children parent) args))
 
 (defun find-child
     (value parent &rest args &key from-end (start 0) end key test)
@@ -129,6 +160,35 @@
     (predicate parent &rest args &key from-end (start 0) end count key)
   (declare (ignore from-end start end count key))
   (apply #'remove-if-not predicate (%children parent) args))
+
+(defun map-recursively (fn node)
+  (map nil
+       (lambda (c)
+	 (funcall fn c)
+	 (map-recursively fn c))
+       (%children node)))
+
+(defmacro do-recursively ((var node &optional result) &body body)
+  `(block nil
+     (map-recursively nil (lambda (,var) ,@body) ,node)
+     (let (,var nil)
+       (declare (ignorable ,var))
+       ,result)))
+
+(defun find-recursively (item node &key key test)
+  (setf key (or key #'identity))
+  (setf test (or key #'eql))
+  (do-recursively (child node)
+    (when (funcall test item (funcall key child))
+      (return child))))
+
+(defun filter-recursively (test node &key key)
+  (setf key (or key #'identity))
+  (setf test (or key #'eql))
+  (nrevers
+   (do-recursively (child node)
+     (when (funcall test (funcall key child))
+       (push child result)))))
 
 
 ;;; tbd

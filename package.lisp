@@ -16,12 +16,20 @@
 	   #:list-children
 	   #:nth-child
 	   #:first-child
-	   #:first-child
+	   #:last-child
+	   #:previous-sibling
+	   #:next-sibling
 	   #:find-child
 	   #:find-child-if
 	   #:child-position
 	   #:child-position-if
+	   #:count-children
+	   #:count-children-if
 	   #:filter-children
+	   #:map-recursively
+	   #:do-recursively
+	   #:find-recursively
+	   #:filter-recursively
 
 	   #:document
 	   #:make-document
