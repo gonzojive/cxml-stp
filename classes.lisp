@@ -41,7 +41,7 @@
 		  :accessor %namespace-uri)))
 
 (defclass attribute (leaf-node named-node-mixin)
-  ((value :accessor attribute-value)))
+  ((value :accessor value)))
 
 (defclass comment (leaf-node)
   ((data :initarg :data :accessor data)))

@@ -40,7 +40,7 @@
 	(cxml::split-qname name)
       (setf (local-name result) local-name)
       (rename-attribute result prefix uri)
-      (setf (attribute-value result) value))
+      (setf (value result) value))
     result))
 
 (defmethod copy ((node attribute))
@@ -48,7 +48,7 @@
     (setf (%local-name result) (%local-name node))
     (setf (%namespace-prefix result) (%namespace-prefix node))
     (setf (%namespace-uri result) (%namespace-uri node))
-    (setf (attribute-value result) (attribute-value node))
+    (setf (value result) (value node))
     result))
 
 (defmethod detach ((node attribute))
@@ -56,7 +56,7 @@
     (remove-attribute node (parent node))))
 
 (defmethod string-value ((node attribute))
-  (attribute-value node))
+  (value node))
 
 ;; zzz WRONG! this excludes surrogates, which would only be correct on SBCL
 ;; if we used its full character range, and is always incorrect on allegro. 
@@ -72,7 +72,7 @@
 		 (<= #x10000 code #x10ffff))))
 	 str))
 
-(defmethod (setf attribute-value) :before (newval (node attribute))
+(defmethod (setf value) :before (newval (node attribute))
   (unless (xml-characters-p newval)
     (stp-error "new attribute value includes characters that cannot be ~
                 represented in XML at all: ~S"
@@ -130,8 +130,8 @@
 ;;; printing
 
 (defmethod slots-for-print-object append ((node attribute))
-  '((:value attribute-value)))
+  '((:value value)))
 
 (defreader attribute (value)
-  (setf (attribute-value this) value))
+  (setf (value this) value))
 

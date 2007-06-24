@@ -123,7 +123,7 @@
 
 (defun maybe-attribute-value (x)
   (if x
-      (attribute-value x)
+      (value x)
       nil))
 
 (defun attribute-value-named (element name &optional (uri ""))
@@ -327,7 +327,7 @@
 			  :namespace-uri (namespace-uri a)
 			  :local-name (local-name a)
 			  :qname (qualified-name a)
-			  :value (attribute-value a)))
+			  :value (value a)))
 		       (%attributes node)))
 	(element-parent
 	 (when (typep (parent node) 'element)

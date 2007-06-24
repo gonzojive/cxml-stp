@@ -64,7 +64,7 @@
 
 	   #:attribute
 	   #:make-attribute
-	   #:attribute-value
+	   #:value
 	   #:rename-attribute
 
 	   #:comment
