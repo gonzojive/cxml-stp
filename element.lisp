@@ -130,7 +130,7 @@
 (defun (setf attribute-value-named) (newval element name &optional (uri ""))
   (let ((a (find-attribute-named element name uri)))
     (if a
-	(setf (value a newval))
+	(setf (value a) newval)
 	(add-attribute (make-attribute newval name uri) element))
     newval))
 

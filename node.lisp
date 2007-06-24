@@ -86,7 +86,7 @@
 (defmacro do-children ((var node &optional result) &body body)
   `(block nil
      (map-children nil (lambda (,var) ,@body) ,node)
-     (let (,var nil)
+     (let (,var)
        (declare (ignorable ,var))
        ,result)))
 
@@ -170,8 +170,8 @@
 
 (defmacro do-recursively ((var node &optional result) &body body)
   `(block nil
-     (map-recursively nil (lambda (,var) ,@body) ,node)
-     (let (,var nil)
+     (map-recursively (lambda (,var) ,@body) ,node)
+     (let (,var)
        (declare (ignorable ,var))
        ,result)))
 
@@ -185,10 +185,11 @@
 (defun filter-recursively (test node &key key)
   (setf key (or key #'identity))
   (setf test (or key #'eql))
-  (nrevers
-   (do-recursively (child node)
-     (when (funcall test (funcall key child))
-       (push child result)))))
+  (let ((result '()))
+    (do-recursively (child node)
+      (when (funcall test (funcall key child))
+	(push child result)))
+    (nreverse result)))
 
 
 ;;; tbd

@@ -105,9 +105,9 @@
     (insert-child parent new-child (1+ idx))))
 
 (defun replace-child (parent new-child old-child)
-  (let ((idx (child-position ref-child parent)))
+  (let ((idx (child-position old-child parent)))
     (unless idx
-      (stp-error "referenced child not found: ~A" ref-child))
+      (stp-error "old child not found: ~A" old-child))
     (replace-children parent
 		      (list new-child)
 		      :start1 idx
