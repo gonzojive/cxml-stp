@@ -50,7 +50,7 @@
 
 (defmethod (setf target) :before (newval (node processing-instruction))
   (check-nc-name newval)
-  (unless (string-equal newval "xml")
+  (when (string-equal newval "xml")
     (stp-error "attempt to pretend that a PI is an XMLDecl")))
 
 (defmethod (setf data) :before (newval (node processing-instruction))
