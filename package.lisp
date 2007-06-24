@@ -52,8 +52,7 @@
 	   #:remove-attribute
 	   #:find-attribute-named
 	   #:find-attribute-if
-	   #:attribute-value-named
-	   #:attribute-value-if
+	   #:attribute-value
 	   #:list-attributes
 	   #:map-attributes
 	   #:find-namespace

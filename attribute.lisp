@@ -84,13 +84,6 @@
     (stp-error "attempt to represent a namespace declaration as an ATTRIBUTE"))
   (setf (%local-name node) newval))
 
-(defmethod qualified-name ((node attribute))
-  (let ((prefix (namespace-prefix node))
-	(local-name (local-name node)))
-    (if (plusp (length prefix))
-	(format nil "~A:~A" prefix local-name)
-	local-name)))
-
 (defun xor (a b)
   (if a (not b) b))
 

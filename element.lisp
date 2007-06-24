@@ -121,18 +121,18 @@
 (defun find-attribute-if (test element)
   (find-if test (%attributes element)))
 
-(defun maybe-attribute-value (x)
-  (if x
-      (value x)
-      nil))
-
 (defun attribute-value-named (element name &optional (uri ""))
-  (maybe-attribute-value
-   (find-attribute-named element name uri)))
+  (let ((a (find-attribute-named element name uri)))
+    (if a
+	(value a)
+	nil)))
 
-(defun attribute-value-if (test element)
-  (maybe-attribute-value
-   (find-attribute-if test element)))
+(defun (setf attribute-value-named) (newval element name &optional (uri ""))
+  (let ((a (find-attribute-named element name uri)))
+    (if a
+	(setf (value a newval))
+	(add-attribute (make-attribute newval name uri) element))
+    newval))
 
 (defun list-attributes (element)
   (copy-list (%attributes element)))
@@ -140,9 +140,7 @@
 (defun map-attributes (result-type fn element)
   (map result-type fn (%attributes element)))
 
-;; fixme: NAMED-NODE-MIXIN?
-(defgeneric qualified-name (node))
-(defmethod qualified-name ((node element))
+(defun qualified-name (node)
   (let ((prefix (namespace-prefix node))
 	(local-name (local-name node)))
     (if (plusp (length prefix))
