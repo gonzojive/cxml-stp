@@ -8,12 +8,20 @@
 	   #:base-uri
 	   #:detach
 	   #:string-value
-	   #:map-children
-	   #:do-children
-	   #:list-children
 	   #:copy
 	   #:serialize
 	   ;; #:query
+	   #:map-children
+	   #:do-children
+	   #:list-children
+	   #:nth-child
+	   #:first-child
+	   #:first-child
+	   #:find-child
+	   #:find-child-if
+	   #:child-position
+	   #:child-position-if
+	   #:filter-children
 
 	   #:document
 	   #:make-document
@@ -22,17 +30,14 @@
 	   #:parent-node
 	   #:prepend-child
 	   #:append-child
-	   #:nth-child
-	   #:find-child
-	   #:find-child-if
-	   #:child-position
-	   #:child-position-if
-	   #:filter-children
 	   #:delete-child
 	   #:delete-nth-child
 	   #:insert-child
+	   #:insert-child-before
+	   #:insert-child-after
 	   #:delete-child-if
 	   #:replace-children
+	   #:replace-child
 
 	   ;; #:named-node
 	   #:local-name

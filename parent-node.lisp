@@ -77,34 +77,6 @@
 (defun append-child (parent child)
   (insert-child parent child (length (%children parent))))
 
-(defun nth-child (idx parent)
-  (elt (%children parent) idx))
-
-(defun find-child
-    (value parent &rest args &key from-end (start 0) end key test)
-  (declare (ignore from-end start end key test))
-  (apply #'find value (%children parent) args))
-
-(defun find-child-if
-    (predicate parent &rest args &key from-end (start 0) end key)
-  (declare (ignore from-end start end key))
-  (apply #'find-if predicate (%children parent) args))
-
-(defun child-position
-    (value parent &rest args &key from-end (start 0) end key test)
-  (declare (ignore from-end start end key test))
-  (apply #'position value (%children parent) args))
-
-(defun child-position-if
-    (predicate parent &rest args &key from-end (start 0) end key)
-  (declare (ignore from-end start end key))
-  (apply #'position-if predicate (%children parent) args))
-
-(defun filter-children
-    (predicate parent &rest args &key from-end (start 0) end count key)
-  (declare (ignore from-end start end count key))
-  (apply #'remove-if-not predicate (%children parent) args))
-
 (defun delete-nth-child (idx parent)
   (let ((old (%children parent)))
     (delete-child-if (constantly t) parent :start idx :count 1)
@@ -119,7 +91,27 @@
 		   :end end
 		   :count count
 		   :key key))
-							    
+
+(defun insert-child-before (parent new-child ref-child)
+  (let ((idx (child-position ref-child parent)))
+    (unless idx
+      (stp-error "referenced child not found: ~A" ref-child))
+    (insert-child parent new-child idx)))
+
+(defun insert-child-after (parent new-child ref-child)
+  (let ((idx (child-position ref-child parent)))
+    (unless idx
+      (stp-error "referenced child not found: ~A" ref-child))
+    (insert-child parent new-child (1+ idx))))
+
+(defun replace-child (parent new-child old-child)
+  (let ((idx (child-position ref-child parent)))
+    (unless idx
+      (stp-error "referenced child not found: ~A" ref-child))
+    (replace-children parent
+		      (list new-child)
+		      :start1 idx
+		      :end1 (1+ idx))))
 
 ;;; CHILDREN-related functions we define
 

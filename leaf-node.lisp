@@ -34,6 +34,8 @@
 
 ;;;; Class LEAF-NODE
 
+(defmethod %children ((node leaf-node))
+  nil)
 
 (defmethod map-children (result-type fn (node leaf-node))
   (and result-type (make-sequence result-type 0)))

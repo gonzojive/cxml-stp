@@ -76,24 +76,69 @@
   (when (parent node)
     (delete-child node (parent node))))
 
-;;; kinderkram
-;;; das ist noch unvollstaendig
+(defgeneric copy (node))
+(defgeneric serialize (node handler))
+
+;;; CHILDREN-related convenience functions
+
 (defgeneric map-children (result-type function node))
+
 (defmacro do-children ((var node &optional result) &body body)
   `(block nil
      (map-children nil (lambda (,var) ,@body) ,node)
      ,result))
+
 (defun list-children (node)
   (map-children 'list #'identity node))
 
-(defgeneric copy (node))
-(defgeneric serialize (node handler))
+(defun nth-child (idx parent)
+  (elt (%children parent) idx))
 
-;; print-object nicht vergessen
+(defun first-child (node)
+  (let ((c (%children node)))	   ;VECTOR or NIL, but not arbitrary list
+    (when (plusp (length c))
+      (elt c 0))))
+
+(defun last-child (node)
+  (let* ((c (%children node))	   ;VECTOR or NIL, but not arbitrary list
+	 (l (length c)))
+    (when (plusp l)
+      (elt c (1- l)))))
+
+(defun find-child
+    (value parent &rest args &key from-end (start 0) end key test)
+  (declare (ignore from-end start end key test))
+  (apply #'find value (%children parent) args))
+
+(defun find-child-if
+    (predicate parent &rest args &key from-end (start 0) end key)
+  (declare (ignore from-end start end key))
+  (apply #'find-if predicate (%children parent) args))
+
+(defun child-position
+    (value parent &rest args &key from-end (start 0) end key test)
+  (declare (ignore from-end start end key test))
+  (apply #'position value (%children parent) args))
+
+(defun child-position-if
+    (predicate parent &rest args &key from-end (start 0) end key)
+  (declare (ignore from-end start end key))
+  (apply #'position-if predicate (%children parent) args))
+
+(defun filter-children
+    (predicate parent &rest args &key from-end (start 0) end count key)
+  (declare (ignore from-end start end count key))
+  (apply #'remove-if-not predicate (%children parent) args))
+
+
+;;; tbd
 
 ;;; (defun query (node xpath)
 ;;;   ;; fixme
 ;;;   )
+
+
+;;;; PRINT-OBJECT
 
 (defgeneric slots-for-print-object (node)
   (:method-combination append))
