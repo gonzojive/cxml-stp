@@ -94,13 +94,43 @@
 (defmethod string-value ((node document-type))
   "")
 
+(defvar *serialize-canonical-notations-only-p* nil)
+
+(defclass notation-collector ()
+  ((collected-notations :initform nil :accessor collected-notations)))
+
+(defmethod sax:notation-declaration
+    ((handler notation-collector) name public system)
+  (push (list name public system) (collected-notations handler)))
+
+(defmethod sax:end-document ((handler notation-collector))
+  (collected-notations handler))
+
 (defmethod serialize ((node document-type) handler)
   (sax:start-dtd handler
 		 (root-element-name node)
 		 (public-id node)
 		 (system-id node))
   (unless (zerop (length (internal-subset node)))
-    (sax:unparsed-internal-subset handler (internal-subset node)))
+    (assert *serialize-canonical-notations-only-p*)
+    (if *serialize-canonical-notations-only-p*
+	(let ((notations
+	       (cxml:parse-rod
+		(concatenate 'string
+			     "<!DOCTYPE dummy ["
+			     (internal-subset node)
+			     "]><dummy/>")
+		(make-instance 'notation-collector))))
+	  (when notations
+	    (sax:start-internal-subset handler)
+	    (loop
+	       for (name public system)
+	       in (sort notations #'string< :key #'car)
+	       do
+		 (sax:notation-declaration handler name public system))
+	    (sax:end-internal-subset handler)))
+	
+	(sax:unparsed-internal-subset handler (internal-subset node))))
   (sax:end-dtd handler))
 
 
