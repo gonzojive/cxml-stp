@@ -128,6 +128,9 @@
 
 (defmethod insert-child ((parent parent-node) child i)
   (check-insertion-allowed parent child i)
+  (%unchecked-insert-child parent child i))
+
+(defun %unchecked-insert-child (parent child i)
   (unless (%children parent)
     (setf (%children parent) (make-array 1 :fill-pointer 0 :adjustable t)))
   (let ((children (%children parent)))

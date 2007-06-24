@@ -35,15 +35,22 @@
   (make-instance 'builder))
 
 (defclass builder ()
-  ((root :accessor builder-root)
-   (elements :initform nil :accessor builder-elements)
+  ((nodes :initform nil :accessor builder-nodes)
    (doctype :initform nil :accessor builder-doctype)
    (internal-subset-sink :initform nil
 			 :accessor builder-internal-subset-sink)))
 
+(defmethod sax:start-document ((builder builder))
+  (push (make-instance 'document) (builder-nodes builder)))
+
+(defun builder-append (builder x)
+  (let ((parent (car (builder-nodes builder))))
+    (%unchecked-insert-child parent x (length (%children parent)))))
+
 (defmethod sax:start-dtd ((builder builder) name publicid systemid)
   (setf (builder-doctype builder)
-	(make-document-type name systemid publicid "")))
+	(make-document-type name systemid publicid ""))
+  (builder-append builder (builder-doctype builder)))
 
 (defmethod sax:start-internal-subset ((builder builder))
   (setf (builder-internal-subset-sink builder) (cxml:make-string-sink)))
@@ -75,29 +82,22 @@
 				   (sax:attribute-qname a)
 				   uri)))
 	    (add-attribute element b)))))
-    (let ((parent (car (builder-elements builder))))
-      (if parent
-	  (append-child parent element)
-	  (setf (builder-root builder) element)))
-    (push element (builder-elements builder))))
+    (builder-append builder element)
+    (push element (builder-nodes builder))))
 
 (defmethod sax:end-element ((builder builder) uri lname qname)
   (declare (ignore uri lname qname))
-  (pop (builder-elements builder)))
+  (pop (builder-nodes builder)))
 
 ;; zzz normalisieren?
 (defmethod sax:characters ((builder builder) data)
-  (append-child (car (builder-elements builder)) (make-text data)))
+  (builder-append builder (make-text data)))
 
 (defmethod sax:processing-instruction ((builder builder) target data)
-  (append-child (car (builder-elements builder))
-		(make-processing-instruction target data)))
+  (builder-append builder (make-processing-instruction target data)))
 
 (defmethod sax:comment ((builder builder) data)
-  (append-child (car (builder-elements builder)) (make-comment data)))
+  (builder-append builder (make-comment data)))
 
 (defmethod sax:end-document ((builder builder))
-  (let ((result (make-document (builder-root builder))))
-    (when (builder-doctype builder)
-      (setf (document-type result) (builder-doctype builder)))
-    result))
+  (pop (builder-nodes builder)))
