@@ -48,8 +48,13 @@
 
   <h3>Documentation</h3>
   <p>
-    Please refer to the <a href="doc/pages/cxml-stp.html">API documentation</a>
-    for details.
+    See the <a href="doc/pages/cxml-stp.html">API documentation</a>.
+  </p>
+  <p>
+    There is also a rough "STP for DOM
+    users" <a href="DOM-COMPARISON">comparison</a> which should be
+    useful if you have a specific DOM function in mind and are looking
+    for STP's equivalent.
   </p>
 
   <h3>Example</h3>

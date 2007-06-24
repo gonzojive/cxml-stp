@@ -1,11 +1,11 @@
 a {
   text-decoration: none;
   color: black;
-  border-bottom: 1px solid #ff9500;
+  border-bottom: 1px solid #0070a0;
 }
 
 a:hover {
-  color: #ff9500;
+  color: #0070a0;
   border-bottom: 1px solid #aaaaaa;
 }
 
@@ -25,7 +25,7 @@ body {
 }
 
 h1,h2,h3 {
-  color: #000077;
+  color: #0070a0;
   margin-top: 2em;
   margin-left: -30px;
 }
@@ -39,7 +39,7 @@ h1,h2,h3 {
 }
 
 .def:hover {
-  background-color: #e0a655;
+  background-color: #0070a0;
 }
 
 .def a {
@@ -52,7 +52,7 @@ h1,h2,h3 {
 }
 
 .def a:hover {
-  background-color: #e0a655;
+  background-color: #0070a0;
   color: #000000;
   text-decoration: none;
   border-bottom: 0px solid white;

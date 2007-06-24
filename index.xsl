@@ -43,7 +43,7 @@
       <div style="margin-left: 30px">
 	<b>
 	  <span>cxml&#x2013;</span>
-	  <span style="color: #e0a655">stp</span>
+	  <span style="color: #55a6e0">stp</span>
 	</b>
       </div>
     </div>
