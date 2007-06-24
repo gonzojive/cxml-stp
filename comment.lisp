@@ -56,7 +56,7 @@
   (when (alexandria:ends-with #\- newval)
     (stp-error "- at end of comment")))
 
-(defmethod unparse ((node comment) handler)
+(defmethod serialize ((node comment) handler)
   (sax:comment handler (data node)))
 
 

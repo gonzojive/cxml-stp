@@ -52,7 +52,7 @@
                 represented in XML at all: ~S"
 	       newval)))
 
-(defmethod unparse ((node text) handler)
+(defmethod serialize ((node text) handler)
   (sax:characters handler (data node)))
 
 

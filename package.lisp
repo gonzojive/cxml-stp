@@ -12,7 +12,7 @@
 	   #:do-children
 	   #:list-children
 	   #:copy
-	   #:unparse
+	   #:serialize
 	   ;; #:query
 
 	   #:document

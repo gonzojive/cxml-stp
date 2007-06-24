@@ -66,7 +66,7 @@
 	    (alexandria:starts-with 32 newval :key #'char-code))
     (stp-error "space at beginning of processing instruction data")))
 
-(defmethod unparse ((node processing-instruction) handler)
+(defmethod serialize ((node processing-instruction) handler)
   (sax:processing-instruction handler (target node) (data node)))
 
 

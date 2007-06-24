@@ -139,9 +139,9 @@
 (defmethod string-value ((node document))
   (string-value (document-element node)))
 
-(defmethod unparse ((node document) handler)
+(defmethod serialize ((node document) handler)
   (sax:start-document handler)
-  (map nil (lambda (x) (unparse x handler)) (%children node))
+  (map nil (lambda (x) (serialize x handler)) (%children node))
   (sax:end-document handler))
 
 (defreader document ())

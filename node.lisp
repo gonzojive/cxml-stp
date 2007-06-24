@@ -87,7 +87,7 @@
   (map-children 'list #'identity node))
 
 (defgeneric copy (node))
-(defgeneric unparse (node handler))
+(defgeneric serialize (node handler))
 
 ;; print-object nicht vergessen
 

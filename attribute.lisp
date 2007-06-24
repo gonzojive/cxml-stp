@@ -123,8 +123,8 @@
        (setf (%namespace-prefix attribute) prefix)
        (setf (%namespace-uri attribute) uri)))))
 
-(defmethod unparse ((node attribute) handler)
-  (stp-error "attempt to unparse an attribute in isolation"))
+(defmethod serialize ((node attribute) handler)
+  (stp-error "attempt to serialize an attribute in isolation"))
 
 
 ;;; printing

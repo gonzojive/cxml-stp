@@ -318,7 +318,7 @@
       (setf (gethash (namespace-prefix a) result) (namespace-uri a)))
     result))
 
-(defmethod unparse ((node element) handler)
+(defmethod serialize ((node element) handler)
   (let ((uri (%namespace-uri node))
 	(local-name (%local-name node))
 	(qname (qualified-name node))
@@ -352,7 +352,7 @@
 			   attrs)))))
 	     (collect-local-namespaces node))
     (sax:start-element handler uri local-name qname attrs)
-    (map nil (lambda (x) (unparse x handler)) (%children node))
+    (map nil (lambda (x) (serialize x handler)) (%children node))
     (sax:end-element handler uri local-name qname)))
 
 (defmethod (setf base-uri) (newval (node element))

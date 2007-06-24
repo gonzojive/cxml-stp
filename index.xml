@@ -61,8 +61,8 @@
     (cxml:parse-file "example.xml" (<a
     href="doc/pages/cxml-stp__make-stp-builder.html">cxml-stp:make-stp-builder</a>)))</pre>
   <p>
-    Serialize STP by sending SAX events for the tree to a serialization sink:
+    Serialize STP by sending SAX events for the tree to a sink:
   </p>
   <pre class="code">(<a
-    href="doc/pages/cxml-stp__unparse.html">cxml-stp:unparse</a> *example* (cxml:make-character-stream-sink *standard-output*))</pre>
+    href="doc/pages/cxml-stp__serialize.html">cxml-stp:serialize</a> *example* (cxml:make-character-stream-sink *standard-output*))</pre>
 </page>

@@ -90,7 +90,7 @@
 (defmethod string-value ((node document-type))
   "")
 
-(defmethod unparse ((node document-type) handler)
+(defmethod serialize ((node document-type) handler)
   (sax:start-dtd handler
 		 (dom:name node)
 		 (dom:public-id node)
