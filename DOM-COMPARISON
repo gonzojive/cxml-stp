@@ -132,4 +132,4 @@ Document.importNode		       COPY
 Document.createElementNS	       [ see above, we /only/ have functions
 Document.createAttributeNS	         with namespace support
 Document.getElementsByTagNameNS		 ]
-Document.getElementsById	       not yet
+Document.getElementById                not yet

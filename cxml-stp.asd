@@ -26,5 +26,6 @@
      (:file "document-type")
      (:file "comment")
      (:file "processing-instruction")
-     (:file "text"))
+     (:file "text")
+     (:file "builder"))
     :depends-on (:cxml :alexandria))
