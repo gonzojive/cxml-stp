@@ -112,7 +112,6 @@
 		 (public-id node)
 		 (system-id node))
   (unless (zerop (length (internal-subset node)))
-    (assert *serialize-canonical-notations-only-p*)
     (if *serialize-canonical-notations-only-p*
 	(let ((notations
 	       (cxml:parse-rod
@@ -129,7 +128,6 @@
 	       do
 		 (sax:notation-declaration handler name public system))
 	    (sax:end-internal-subset handler)))
-	
 	(sax:unparsed-internal-subset handler (internal-subset node))))
   (sax:end-dtd handler))
 

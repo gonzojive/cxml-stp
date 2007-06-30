@@ -38,6 +38,10 @@
     </span>
   </xsl:template>
 
+  <xsl:template match="raute">
+    <span style="font-size: 12pt">&#x2b17;</span>
+  </xsl:template>
+
   <xsl:template name="header">
     <div id="header">
       <div style="margin-left: 30px">

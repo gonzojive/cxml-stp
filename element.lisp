@@ -70,6 +70,10 @@
 	 (or (null name) (equal (local-name x) name))
 	 (equal (namespace-uri x) uri))))
 
+(defun map-extra-namespaces (fn element)
+  (when (%namespaces element)
+    (maphash fn (%namespaces element))))
+
 (defun find-extra-namespace (prefix element)
   (when (%namespaces element)
     (gethash prefix (%namespaces element))))
@@ -121,17 +125,17 @@
 (defun find-attribute-if (test element)
   (find-if test (%attributes element)))
 
-(defun attribute-value-named (element name &optional (uri ""))
+(defun attribute-value (element name &optional (uri ""))
   (let ((a (find-attribute-named element name uri)))
     (if a
 	(value a)
 	nil)))
 
-(defun (setf attribute-value-named) (newval element name &optional (uri ""))
+(defun (setf attribute-value) (newval element name &optional (uri ""))
   (let ((a (find-attribute-named element name uri)))
     (if a
 	(setf (value a) newval)
-	(add-attribute (make-attribute newval name uri) element))
+	(add-attribute element (make-attribute newval name uri)))
     newval))
 
 (defun list-attributes (element)
@@ -368,9 +372,9 @@
 
 (defmethod base-uri ((node element))
   (let ((xml-base
-	 (or (attribute-value-named node
-				    "base"
-				    "http://www.w3.org/XML/1998/namespace")
+	 (or (attribute-value node
+			      "base"
+			      "http://www.w3.org/XML/1998/namespace")
 	     (%base-uri node)))
 	(parent (parent node)))
     (if parent
@@ -394,7 +398,7 @@
 ;;;	     (return (merge-uris relative-uri defaults)))
 ;;;	   (when (typep n 'document)
 ;;;	     (return (merge-uris %base-uri defaults)))
-;;;	   (let ((xml-base (attribute-value-named
+;;;	   (let ((xml-base (attribute-value
 ;;;			    n
 ;;;			    "base"
 ;;;			    "http://www.w3.org/XML/1998/namespace")))
@@ -429,14 +433,17 @@
 
 ;;; printing
 
+(defun non-empty-string (x)
+  (plusp (length x)))
+
 (defmethod slots-for-print-object append ((node named-node-mixin))
   '((:local-name local-name)
-    (:namespace-prefix namespace-prefix)
-    (:namespace-uri namespace-uri)))
+    (:namespace-prefix namespace-prefix non-empty-string)
+    (:namespace-uri namespace-uri non-empty-string)))
 
 (defmethod slots-for-print-object append ((node element))
-  '((:attributes %attributes)
-    (:extra-namespaces namespaces-for-print)))
+  '((:attributes %attributes identity)
+    (:extra-namespaces namespaces-for-print identity)))
 
 (defun namespaces-for-print (element)
   (when (%namespaces element)
@@ -445,12 +452,14 @@
        using (hash-value uri)
        collect `(,prefix ,uri))))
 
-(defreader named-node-mixin (local-name namespace-prefix namespace-uri)
+(defreader named-node-mixin (local-name
+			     (namespace-prefix "")
+			     (namespace-uri ""))
   (setf (%local-name this) local-name)
   (setf (%namespace-prefix this) namespace-prefix)
   (setf (%namespace-uri this) namespace-uri))
 
-(defreader element (attributes extra-namespaces)
+(defreader element ((attributes nil) (extra-namespaces nil))
   (dolist (a attributes)
     (add-attribute this a))
   (loop for (prefix uri) on extra-namespaces do

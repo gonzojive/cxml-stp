@@ -25,11 +25,14 @@
     <i>Acknowledgements:</i>
     cxml-stp is inspired heavily by <a href="http://www.xom.nu/">XOM</a>.
   </p>
-  <h3>Download and Installation</h3>
-
+  <h3>Download</h3>
   <p>
-    Download a cxml-stp
+    Download a
     <a href="http://www.lichteblau.com/cxml-stp/download/">tarball</a>.
+  </p>
+
+  <h3>Installation</h3>
+  <p>
     cxml-stp needs
     <a href="http://common-lisp.net/project/cxml">Closure XML</a>
     and <a href="http://common-lisp.net/project/alexandria/">Alexandria</a>.
@@ -48,7 +51,14 @@
 
   <h3>Documentation</h3>
   <p>
-    See the <a href="doc/pages/cxml-stp.html">API documentation</a>.
+    <raute/> <a href="tutorial/index.html">Tutorial</a>
+  </p>
+  <p>
+    <raute/> <a href="tutorial/examples.html">Code examples</a>
+    from the tutorial collected on one page
+  </p>
+  <p>
+    <raute/> <a href="doc/pages/cxml-stp.html">API documentation</a>
   </p>
   <p>
     There is also a rough "STP for DOM
@@ -57,6 +67,7 @@
     for STP's equivalent.
   </p>
 
+<!--
   <h3>Example</h3>
   <p>
     To parse into STP, use an STP builder together with a function
@@ -70,4 +81,5 @@
   </p>
   <pre class="code">(<a
     href="doc/pages/cxml-stp__serialize.html">cxml-stp:serialize</a> *example* (cxml:make-character-stream-sink *standard-output*))</pre>
+-->
 </page>

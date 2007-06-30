@@ -1,5 +1,6 @@
 (defpackage :cxml-stp
   (:use :cl)
+  (:nicknames :stp)
   (:export #:*check-uri-syntax*
 
 	   #:node
@@ -148,7 +149,6 @@
     Other kinds of nodes:
 
     @aboutclass{comment}
-    @aboutclass{data}
     @aboutclass{document-type}
     @aboutclass{processing-instruction}
     @aboutclass{text}
@@ -158,7 +158,6 @@
      
     @aboutfun{make-attribute}
     @aboutfun{make-comment}
-    @aboutfun{make-data}
     @aboutfun{make-document}
     @aboutfun{make-document-type}
     @aboutfun{make-element}
@@ -239,6 +238,8 @@
     A node can also be deleted from its parent directly using @fun{detach}.
 
     @aboutfun{detach}
+    @fun{detach} also works for attributes.
+
     @end{section}
     @begin[Elements and their Attributes]{section}
     In addition to their children, elements have attributes and \"extra
@@ -273,4 +274,5 @@
     @aboutfun{add-extra-namespace}
     @aboutfun{remove-extra-namespace}
     @aboutfun{find-extra-namespace}
+    @aboutfun{map-extra-namespaces}
     @end{section}"))

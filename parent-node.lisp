@@ -128,7 +128,8 @@
 
 (defmethod insert-child ((parent parent-node) child i)
   (check-insertion-allowed parent child i)
-  (%unchecked-insert-child parent child i))
+  (%unchecked-insert-child parent child i)
+  (setf (%parent child) parent))
 
 (defun %unchecked-insert-child (parent child i)
   (unless (%children parent)
@@ -150,9 +151,10 @@
     (setf (%parent loser) nil)))
 
 (defmethod delete-child-if
-    (predicate (parent parent-node) &key from-end (start 0) end count key)
+    (predicate (parent parent-node) &key from-end start end count key)
   (let ((c (%children parent))
 	(result nil))
+    (setf start (or start 0))
     (setf key (or key #'identity))
     (setf count (or count (length c)))
     (setf end (or end (length c)))

@@ -36,13 +36,13 @@
   (when (and *check-uri-syntax* (not (search "://" uri)))
     (warn "namespace URI does not look like an absolute URL: ~S" uri)))
 
-(define-condition rng-error (simple-error)
+(define-condition stp-error (simple-error)
   ()
   (:documentation "The class of all STP errors."))
 
 (defun stp-error (fmt &rest args)
   "@unexport{}"
-  (error 'rng-error :format-control fmt :format-arguments args))
+  (error 'stp-error :format-control fmt :format-arguments args))
 
 
 ;;;; Class NODE
@@ -205,8 +205,8 @@
   (:method-combination append))
 
 (defmethod slots-for-print-object append ((node parent-node))
-  '((:base-uri %base-uri)
-    (:children list-children)))
+  '((:base-uri %base-uri non-empty-string)
+    (:children list-children identity)))
 
 (defmethod print-object ((object node) stream)
   (when (and *print-readably* (not *read-eval*))
@@ -216,7 +216,12 @@
       (ugly-print-node object stream)))
 
 (defun pretty-print-node (node stream)
-  (let* ((slots (slots-for-print-object node))
+  (let* ((slots (mapcan (lambda (spec)
+			  (destructuring-bind (key fn &optional test) spec
+			    (let ((value (funcall fn node)))
+			      (when (or (null test) (funcall test value))
+				(list (list key value))))))
+			(slots-for-print-object node)))
 	 (constructor (class-name (class-of node)))
 	 (level *print-level*)
 	 (length *print-length*)
@@ -237,12 +242,11 @@
           (pprint-newline :linear stream)
           (loop
 	     (pprint-pop)
-	     (destructuring-bind (key fn) (pop remaining-slots)
+	     (destructuring-bind (key value) (pop remaining-slots)
 	       (write key :stream stream)
 	       (write-char #\space stream)
 	       (pprint-newline :miser stream)
-	       (let ((value (funcall fn node))
-		     (*print-level* level)
+	       (let ((*print-level* level)
 		     (*print-length* length))
 		 (unless (typep value '(or string null))
 		   (write-char #\' stream))
@@ -253,7 +257,12 @@
 	       (pprint-newline :linear stream))))))))
 
 (defun ugly-print-node (node stream)
-  (let* ((slots (slots-for-print-object node))
+  (let* ((slots (mapcan (lambda (spec)
+			  (destructuring-bind (key fn &optional test) spec
+			    (let ((value (funcall fn node)))
+			      (when (or (null test) (funcall test value))
+				(list (list key value))))))
+			(slots-for-print-object node)))
 	 (constructor (class-name (class-of node)))
 	 (level *print-level*)
 	 (length *print-length*)
@@ -268,11 +277,10 @@
       (when remaining-slots
 	(write-char #\space stream)
 	(loop
-	   (destructuring-bind (key fn) (pop remaining-slots)
+	   (destructuring-bind (key value) (pop remaining-slots)
 	     (write key :stream stream)
 	     (write-char #\space stream)
-	     (let ((value (funcall fn node))
-		   (*print-level* level)
+	     (let ((*print-level* level)
 		   (*print-length* length))
 	       (unless (typep value '(or string null))
 		 (write-char #\' stream))
@@ -301,7 +309,9 @@
 	   ((this ,name)
 	    &key ,@(loop
 		      for arg in args
-		      collect `(,arg (error "slot ~A missing in printed representation"
-					    ',arg)))
+		      collect (if (symbolp arg)
+				  `(,arg (error "slot ~A missing in printed representation"
+						',arg))
+				  args))
 	    &allow-other-keys)
 	 ,@body))))
