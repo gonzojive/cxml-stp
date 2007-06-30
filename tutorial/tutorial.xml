@@ -28,14 +28,14 @@
     <example title="To parse into STP, use an STP builder together with a
 		   function generating SAX events:">
       <code>(<b>cxml:parse-file</b> "example.xml" (<a
-						    href="doc/pages/cxml-stp__make-stp-builder.html"><b>cxml-stp:make-stp-builder</b></a>))</code>
+						    href="doc/pages/cxml-stp__make-stp-builder.html"><b>stp:make-stp-builder</b></a>))</code>
     </example>
     <br/>
     Serializing back into XML:
     <example title="Serialize STP by sending SAX events for the tree to a
 		   sink:">
       <code>(<a href="doc/pages/cxml-stp__serialize.html"
-	      ><b>cxml-stp:serialize</b></a> * (cxml:make-character-stream-sink *standard-output*))</code>
+	      ><b>stp:serialize</b></a> * (cxml:make-character-stream-sink *standard-output*))</code>
     </example>
   </page>
 
@@ -126,7 +126,7 @@
     <br/>
     Try this:
     <example title='getElementsByTagNameNS("foo", "")'>
-      <code>(cxml-stp:filter-recursively (cxml-stp:of-name "foo") node)</code>
+      <code>(stp:filter-recursively (stp:of-name "foo") node)</code>
     </example>
   </page>
 
@@ -166,16 +166,16 @@
   <page title="Elements (2)"
 	description="Example">
     <example title="Making an element (no namespace)">
-      <repl>CL-USER> (cxml-stp:make-element "list")</repl>
-      <result>#.(CXML-STP:ELEMENT :LOCAL-NAME "list")</result>
+      <repl>CL-USER> (stp:make-element "list")</repl>
+      <result>#.(STP:ELEMENT :LOCAL-NAME "list")</result>
     </example>
     <br/>
     Namespace URI is an optional argument:
     <br/>
     <example title="Making an element (with namespace)">
-      <repl>CL-USER> (cxml-stp:make-element "z:list" "http://namespace")</repl>
+      <repl>CL-USER> (stp:make-element "z:list" "http://namespace")</repl>
       <result>
-#.(CXML-STP:ELEMENT
+#.(STP:ELEMENT
    :LOCAL-NAME "list"
    :NAMESPACE-PREFIX "z"
    :NAMESPACE-URI "http://namespace")</result>
@@ -205,11 +205,11 @@
 	description="Example">
     Making an attribute node:
     <example title="Making an attribute node">
-      <repl>CL-USER> (cxml-stp:make-attribute "123" 
+      <repl>CL-USER> (stp:make-attribute "123" 
 				  "a:defaultValue" 
 				  "http://relaxng.org/ns/compatibility/annotations/1.0")</repl>
       <result>
-#.(CXML-STP:ATTRIBUTE
+#.(STP:ATTRIBUTE
    :VALUE "123"
    :LOCAL-NAME "defaultValue"
    :NAMESPACE-PREFIX "a"
@@ -250,13 +250,13 @@
 	 foo:annotation="bar">
   &lt;empty/>
 &lt;/element></repl>
-      <result>#.(CXML-STP:ELEMENT
+      <result>#.(STP:ELEMENT
    :LOCAL-NAME "element"
    :NAMESPACE-URI "http://relaxng.org/ns/structure/1.0"
-   :ATTRIBUTES '(#.(<b>CXML-STP:ATTRIBUTE</b>
+   :ATTRIBUTES '(#.(<b>STP:ATTRIBUTE</b>
                     :LOCAL-NAME "name"
                     :VALUE "foo")
-                 #.(<b>CXML-STP:ATTRIBUTE</b>
+                 #.(<b>STP:ATTRIBUTE</b>
                     :LOCAL-NAME "annotation"
                     :NAMESPACE-PREFIX "foo"
                     :NAMESPACE-URI "http://foo"
@@ -270,17 +270,17 @@
     <br/>
     <br/>
     <example title="Well-formed namespaces">
-      <repl>(let ((e (cxml-stp:make-element           "a:foo" "http://a"))
-      (a (cxml-stp:make-attribute "value" "b:bar" "http://b")))
-  (cxml-stp:add-attribute e a))</repl>
+      <repl>(let ((e (stp:make-element           "a:foo" "http://a"))
+      (a (stp:make-attribute "value" "b:bar" "http://b")))
+  (stp:add-attribute e a))</repl>
       <result>Okay</result>
     </example>
     <br/>
     Conflicting declarations on the same element are forbidden.
     <example title="Namespaces not well-formed">
-      <repl>(let ((e (cxml-stp:make-element           "<b>a</b>:foo" "http://a"))
-      (a (cxml-stp:make-attribute "value" "a:bar" "<b>http://b</b>")))
-  (cxml-stp:add-attribute e a))</repl>
+      <repl>(let ((e (stp:make-element           "<b>a</b>:foo" "http://a"))
+      (a (stp:make-attribute "value" "a:bar" "<b>http://b</b>")))
+  (stp:add-attribute e a))</repl>
       <result><b>Error: namespace collision with element</b></result>
     </example>
   </page>
@@ -307,13 +307,13 @@
   <page title="Documents">
     Create using <tt>make-document</tt>:
     <br/>
-    <repl>CL-USER> (cxml-stp:make-document (cxml-stp:make-element "list"))</repl>
-    <result>#.(CXML-STP:DOCUMENT
-:CHILDREN '(#.(CXML-STP:ELEMENT
+    <repl>CL-USER> (stp:make-document (stp:make-element "list"))</repl>
+    <result>#.(STP:DOCUMENT
+:CHILDREN '(#.(STP:ELEMENT
                   #| :PARENT of type DOCUMENT |#
                   :LOCAL-NAME "list")))</result>
     Children: May have <em>at most one document-type</em>, and
-    must have <em>exactly one element</em> as children (<em>in this
+    must have <em>exactly one element</em> as a child (<em>in this
       order</em>). May also have comments and processing-instructions
     anywhere.
     <br/>
@@ -334,17 +334,23 @@
   <page title="Easy classes"
 	description="comment, text, processing-instruction">
     Text nodes are the <i>chit-chat</i> in <tt>&lt;p>chit-chat&lt;/p></tt>.
-    <repl>CL-USER> (stp:make-text "chit-chat")</repl>
-    <result>#.(CXML-STP:TEXT :DATA "chit-chat")</result>
+    <example title="Text nodes">
+      <repl>CL-USER> (stp:make-text "chit-chat")</repl>
+      <result>#.(STP:TEXT :DATA "chit-chat")</result>
+    </example>
     <tt>&lt;!--Ich bin ein Blindtext.--&gt;</tt> is preserved by the parser
     as a node, too.
-    <repl>CL-USER> (stp:make-comment "Ich bin ein Blindtext.")</repl>
-    <result>#.(CXML-STP:COMMENT :DATA "Ich bin ein Blindtext.")</result>
-    <tt>&lt;?xml-stylesheet type='text/xsl' href='style.xsl'?&gt;</tt>
-    <repl>CL-USER> (stp:make-processing-instruction "xml-stylesheet" "type='text/xsl' href='style.xsl'")</repl>
-    <result>#.(CXML-STP:PROCESSING-INSTRUCTION
+    <example title="Comment nodes">
+      <repl>CL-USER> (stp:make-comment "Ich bin ein Blindtext.")</repl>
+      <result>#.(STP:COMMENT :DATA "Ich bin ein Blindtext.")</result>
+    </example>
+    <example title="Processing instruction nodes">
+      <tt>&lt;?xml-stylesheet type='text/xsl' href='style.xsl'?&gt;</tt>
+      <repl>CL-USER> (stp:make-processing-instruction "xml-stylesheet" "type='text/xsl' href='style.xsl'")</repl>
+      <result>#.(STP:PROCESSING-INSTRUCTION
    :DATA "type='text/xsl' href='style.xsl'"
    :TARGET "xml-stylesheet")</result>
+    </example>
   </page>
   
   <page title="document-type">
@@ -368,20 +374,30 @@
 
   <page title="MORE STRICTNESS"
 	description="Other well-formedness checks">
-    <repl>CL-USER> (stp:make-comment "verboten: --")</repl>
-    <result>Error: forbidden -- in comment</result>
-    <repl>CL-USER> (stp:make-element "1eadingdigit")</repl>
-    <result>Error: not an NCName: 1eadingdigit</result>
-    <repl>CL-USER> (stp:make-element "html" "oops")</repl>
-    <result>WARNING: namespace URI does not look like an absolute URL: "oops"</result>
-    <repl>CL-USER> (stp:make-processing-instruction "xml" "version='1.0'")</repl>
-    <result>Error: attempt to pretend that a PI is an XMLDecl</result>
+    <example title="Not all strings are allowed as comments">
+      <repl>CL-USER> (stp:make-comment "verboten: --")</repl>
+      <result>Error: forbidden -- in comment</result>
+    </example>
+    <example title="Names must follow the XML grammar">
+      <repl>CL-USER> (stp:make-element "1eadingdigit")</repl>
+      <result>Error: not an NCName: 1eadingdigit</result>
+    </example>
+    <example title="Mild protection against bogus argument order">
+      <repl>CL-USER> (stp:make-element "html" "oops")</repl>
+      <result>WARNING: namespace URI does not look like an absolute URL: "oops"</result>
+    </example>
+    <example title="The XMLDecl is not a processing instruction">
+      <repl>CL-USER> (stp:make-processing-instruction "xml" "version='1.0'")</repl>
+      <result>Error: attempt to pretend that a PI is an XMLDecl</result>
+    </example>
   </page>
 
   <page title="STP for Closure XML">
     <br/>
     <br/>
     <br/>
-    http://www.lichteblau.com/cxml-stp/
+    <a href="http://www.lichteblau.com/cxml-stp/">
+      http://www.lichteblau.com/cxml-stp/
+    </a>
   </page>
 </tutorial>
