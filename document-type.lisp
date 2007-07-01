@@ -155,6 +155,8 @@
 (defmethod string-value ((node document-type))
   "")
 
+;; for the XML test suite
+;; doesn't actually work, since we don't record those notations anyway
 (defvar *serialize-canonical-notations-only-p* nil)
 
 (defclass notation-collector ()

@@ -79,9 +79,6 @@
 (defmethod string-value ((node attribute))
   (value node))
 
-;; zzz WRONG! this excludes surrogates, which would only be correct on SBCL
-;; if we used its full character range, and is always incorrect on allegro.
-;; (The rest of cxml repeats the same mistake though.)
 (defun xml-characters-p (str)
   (every (lambda (c)
 	   (let ((code (char-code c)))
@@ -89,6 +86,12 @@
 		 (eql code 10)
 		 (eql code 13)
 		 (<= 32 code #xd7ff)
+		 ;; zzz don't disallow surrogates, which would only be
+		 ;; correct on SBCL if we used its full character range, and
+		 ;; is always incorrect on allegro.
+		 (<= #xD800 code #xDBFF)
+		 (<= #xDC00 code #xDFFF)
+		 ;;
 		 (<= #xe000 code #xfffd)
 		 (<= #x10000 code #x10ffff))))
 	 str))
