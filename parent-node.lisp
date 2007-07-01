@@ -79,17 +79,39 @@
 ;;; CHILDREN-related convenience functions
 
 (defun prepend-child (child parent)
+  "@arg[child]{a @class{node}}
+   @arg[parent]{a @class{parent-node}}
+   @short{Adds @code{child} as the first child of @code{parent}, if allowed.}
+
+   Signals an error if the child already has a parent."
   (insert-child child parent 0))
 
 (defun append-child (parent child)
+  "@arg[child]{a @class{node}}
+   @arg[parent]{a @class{parent-node}}
+   Adds @code{child} as the last child of @code{parent}, if allowed.
+
+   Signals an error if the child already has a parent."
   (insert-child parent child (length (%children parent))))
 
 (defun delete-nth-child (idx parent)
+  "@arg[idx]{a non-negative integer}
+   @arg[parent]{a @class{parent-node}}
+   Removes child @code{idx} of @code{parent}, if allowed."
   (let ((old (%children parent)))
     (delete-child-if (constantly t) parent :start idx :count 1)
     (elt old idx)))
 
 (defun delete-child (child parent &key from-end test start end count key)
+  "@arg[child]{an object}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @return{a @class{node} or nil}
+   Searches for an child node of @code{parent} that satisfies the @code{test}
+   and removes it, if allowed."
   (setf test (or test #'eql))
   (delete-child-if (lambda (c) (funcall test child c))
 		   parent
@@ -100,18 +122,45 @@
 		   :key key))
 
 (defun insert-child-before (parent new-child ref-child)
+  "@arg[parent]{a @class{parent-node}}
+   @arg[new-child]{a @class{node}}
+   @arg[ref-child]{a @class{node}}
+   @short{Adds @code{new-child} before @code{ref-child} as a child node of
+   @code{parent}, if allowed.}
+
+   Signals an error if the child already has a parent.
+
+   Also signals an error if @code{ref-child} is not a child of @code{parent}."
   (let ((idx (child-position ref-child parent)))
     (unless idx
       (stp-error "referenced child not found: ~A" ref-child))
     (insert-child parent new-child idx)))
 
 (defun insert-child-after (parent new-child ref-child)
+  "@arg[parent]{a @class{parent-node}}
+   @arg[new-child]{a @class{node}}
+   @arg[ref-child]{a @class{node}}
+   @short{Adds @code{new-child} after @code{ref-child} as a child node of
+   @code{parent}, if allowed.}
+
+   Signals an error if the child already has a parent.
+
+   Also signals an error if @code{ref-child} is not a child of @code{parent}."
   (let ((idx (child-position ref-child parent)))
     (unless idx
       (stp-error "referenced child not found: ~A" ref-child))
     (insert-child parent new-child (1+ idx))))
 
 (defun replace-child (parent new-child old-child)
+  "@arg[parent]{a @class{parent-node}}
+   @arg[new-child]{a @class{node}}
+   @arg[old-child]{a @class{node}}
+   @short{Adds @code{new-child} instead of @code{old-child} as a child node of
+   @code{parent}, if allowed.}
+
+   Signals an error if the new child already has a parent.
+
+   Also signals an error if @code{old-child} is not a child of @code{parent}."
   (let ((idx (child-position old-child parent)))
     (unless idx
       (stp-error "old child not found: ~A" old-child))
@@ -122,12 +171,42 @@
 
 ;;; CHILDREN-related functions we define
 
-(defgeneric insert-child (parent child position))
+(defgeneric insert-child (parent child position)
+  (:documentation
+   "@arg[parent]{a @class{parent-node}}
+    @arg[child]{a @class{node}}
+    @arg[position]{a non-negative integer}
+    @short{Adds @code{child} as a child node of @code{parent} at position
+      @code{position} if allowed.}
+
+   Signals an error if the new child already has a parent.
+
+   Also signals an error if @code{position} is greater than the number
+   @code{parent}'s child nodes."))
 
 (defgeneric delete-child-if
-    (predicate parent &rest args &key from-end start end count key))
+    (predicate parent &rest args &key from-end start end count key)
+  (:documentation
+   "@arg[predicate]{a designator for a function of one argument that returns
+     a generalized boolean}
+    @arg[parent]{a @class{node}}
+    @arg[from-end]{a generalized boolead}
+    @arg[start, end]{bounding index designators for @code{parent}'s child list}
+    @arg[key]{a designator for a function of one argument, or nil}
+    @arg[test]{a designator for a function of two arguments, or nil}
+    @return{a @class{node} or nil}
+    Searches for an child node of @code{parent} that satisfies @code{predicate}
+    and removes it, if allowed."))
 
-(defgeneric replace-children (parent seq &key start1 end1 start2 end2))
+(defgeneric replace-children (parent seq &key start1 end1 start2 end2)
+  (:documentation
+   "@arg[parent]{a @class{node}}
+    @arg[seq]{a sequence of @class{node}s}
+    @arg[start1, end1]{bounding index designators for @code{parent}'s child list}
+    @arg[start2, end2]{bounding index designators for @code{seq}}
+    Modifies the child list of @code{parent} by replacing its child nodes
+    bounded by @code{start1} and @code{end1} with the elements of
+    @code{seq} bounded by @code{start2} and @code{end2}, if allowed."))
 
 (defgeneric check-insertion-allowed (parent child position))
 (defgeneric check-deletion-allowed (parent child position))
