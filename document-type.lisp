@@ -73,6 +73,19 @@
     @return{the public-id}
     @short{Sets the document-type's public-id.}"))
 
+(defgeneric internal-subset (document-type)
+  (:documentation
+   "@arg[document-type]{@class{document-type}}
+    @return{string, a well-formed internal subset}
+    @short{Returns the document-type's internal subset as a string.}"))
+
+(defgeneric (setf internal-subset) (newval document-type)
+  (:documentation
+   "@arg[newval]{string, a well-formed internal subset}
+    @arg[document-type]{@class{document-type}}
+    @return{the internal-subset}
+    @short{Sets the document-type's internal subset.}"))
+
 
 (defun make-document-type
     (root-element-name &optional system-id public-id internal-subset)

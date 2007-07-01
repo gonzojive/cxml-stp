@@ -121,14 +121,31 @@
 	 (equal (namespace-uri x) uri))))
 
 (defun map-extra-namespaces (fn element)
+  "@arg[fn]{a designator for a function of two arguments}
+   @arg[element]{an instance of @class{element}}
+   @return{nil}
+   Call fn for each extra namespace declared on @code{element} with
+   namespace prefix and URI as arguments."
   (when (%namespaces element)
     (maphash fn (%namespaces element))))
 
 (defun find-extra-namespace (prefix element)
+  "@arg[prefix]{a string}
+   @arg[element]{an instance of @class{element}}
+   @return{the namespace URI (a string), or nil}
+   Find the extra namespace named @code{prefix} declared on @code{element}
+   and return its namespace URI, or return nil if no such namespace was found."
   (when (%namespaces element)
     (gethash prefix (%namespaces element))))
 
 (defun add-attribute (element attribute)
+  "@arg[element]{an instance of @class{element}}
+   @arg[attribute]{an instance of @class{attribute}}
+   @short{Add a new attribute to @code{element} or replace an existing
+     attribute node of the same name.}
+
+   It is an error if the attribute's namespace conflicts with existing
+   namespace declarations on this element."
   (check-type element element)
   (check-type attribute attribute)
   (assert-orphan attribute)
@@ -163,6 +180,11 @@
   (setf (%parent attribute) nil))
 
 (defun remove-attribute (element attribute)
+  "@arg[element]{an instance of @class{element}}
+   @arg[attribute]{an instance of @class{attribute}}
+   @short{Remove an attribute node from @code{element}.}
+
+   It is an error if @code{attribute} is not an attribute of @code{element}."
   (check-type element element)
   (check-type attribute attribute)
   (unless (eq (parent attribute) element)
@@ -170,12 +192,35 @@
   (%remove-attribute attribute))
 
 (defun find-attribute-named (element name &optional (uri ""))
+  "@arg[element]{an instance of @class{element}}
+   @arg[name]{string, an NCName} 
+   @arg[uri]{string, a namespace URI} 
+   @return{an @class{attribute} or nil}
+   @short{Searches for an attribute node of @code{element} with the
+     specified local name and namespace URI and returns it.}
+
+   Returns nil if no such attribute was found."
   (find-attribute-if (of-name name uri) element))
 
 (defun find-attribute-if (test element)
+  "@arg[test]{a designator for a function of one argument.}
+   @arg[element]{an instance of @class{element}}
+   @return{an @class{attribute} or nil}
+   @short{Searches for an attribute node of @code{element} satisfying
+     @code{test}}
+
+   Returns nil if no such attribute was found."
   (find-if test (%attributes element)))
 
 (defun attribute-value (element name &optional (uri ""))
+  "@arg[element]{an instance of @class{element}}
+   @arg[name]{string, an NCName} 
+   @arg[uri]{string, a namespace URI} 
+   @return{a string or nil}
+   @short{Searches for an attribute node of @code{element} with the
+     specified local name and namespace URI and returns its value.}
+
+   Returns nil if no such attribute was found."
   (let ((a (find-attribute-named element name uri)))
     (if a
 	(value a)
@@ -189,9 +234,20 @@
     newval))
 
 (defun list-attributes (element)
+  "@arg[element]{an @class{element}}
+   @return{a list of @class{attribute} nodes}
+   Returns a freshly consed list containing the attributes of @code{element}."
   (copy-list (%attributes element)))
 
 (defun map-attributes (result-type fn element)
+  "@arg[result-type]{a sequence type specifier, or nil}
+   @arg[fn]{a designator for a function of one argument}
+   @arg[element]{an instance of @class{element}}
+   @return{an sequence of @code{result-type}, or nil}
+   @short{Applies @code{fn} to each attribute nodes of @code{element}.}
+
+    The @code{result-type} specifies the type of the resulting sequence.
+    @code{map-children} returns nil if @code{result-type} is nil."
   (map result-type fn (%attributes element)))
 
 (defun qualified-name (node)
@@ -209,6 +265,16 @@
 	local-name)))
 
 (defun find-namespace (prefix element)
+  "@arg[prefix]{a string}
+   @arg[element]{an instance of @class{element}}
+   @return{the namespace URI (a string), or nil}
+   @short{Find the namespace @code{prefix} declared on @code{element}
+   or its parent and return its namespace URI, or return nil if no such
+   namespace was found.}
+
+   This functions returns the same result as @fun{find-local-namespace}
+   if the namespace is declared directly on @code{element}.  Otherwise
+   it takes into account namespaces declared on parent elements."
   (cond
     ((find-local-namespace prefix element))
     ((parent element)
@@ -229,6 +295,15 @@
 	  nil))))
 
 (defun find-local-namespace (prefix element)
+  "@arg[prefix]{a string}
+   @arg[element]{an instance of @class{element}}
+   @return{the namespace URI (a string), or nil}
+   @short{Find the namespace @code{prefix} declared on @code{element}
+   and return its namespace URI, or return nil if no such namespace was found.}
+
+   The namespaces considered by this function are: The namespace of the element
+   itself.  The namespaces of element's attributes.  Extra namespaces declared
+   by the element.  The \"xmlns\" namespace, which is always fixed."
   (cond
     ((equal prefix (namespace-prefix element))
       (namespace-uri element))
@@ -334,6 +409,15 @@
   t)
 
 (defun add-extra-namespace (element prefix uri)
+  "@arg[prefix]{string, an NCName}
+   @arg[uri]{string, a namespace URI}
+   @arg[element]{an instance of @class{element}}
+   @return{@code{uri}}
+   @short{Add an extra namespace to @code{element} that maps @code{prefix} to
+   @code{uri}.}
+
+   It is an error if the new namespace conflicts with existing namespace
+   declarations on this element."
   (unless prefix (setf prefix ""))
   (unless uri (setf uri ""))
   (unless
@@ -363,6 +447,10 @@
     uri))
 
 (defun remove-extra-namespace (element prefix)
+  "@arg[prefix]{string, an NCName}
+   @arg[element]{an instance of @class{element}}
+   @return{@code{uri}}
+   Removed the extra namespace declared on @code{element} for @code{prefix}."
   (when (%namespaces element)
     (remhash (or prefix "") (%namespaces element))))
 

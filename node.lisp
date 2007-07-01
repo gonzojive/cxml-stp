@@ -47,7 +47,24 @@
 
 ;;;; Class NODE
 
-(defgeneric string-value (node))
+(defgeneric string-value (node)
+  (:documentation
+   "@arg[node]{an instance of @class{node}}
+    @return{a string}
+    @short{Returns the string value of @code{node} as defined by XPath.}
+
+    For a document, this is the value of its root element.
+
+    For an element, the concatenation of the values of those child nodes
+    is returned that are elements or text nodes.
+    (Leaving only the PCDATA content.)
+
+    For a text, comment, and processing instruction nodes, the node's data
+    is returned.
+
+    For an attribute, the attribute value is returned.
+
+    The value for document types is not specified."))
 
 (defgeneric parent (node)
   (:documentation
@@ -69,6 +86,13 @@
      finally (return parent)))
 
 (defun root (node)
+  "@arg[node]{an instance of @class{node}}
+   @return{a @class{node} or nil}
+   @short{Returns the root of the tree of nodes @code{node} is part of.}
+
+   In a complete document, this is an instance of @class{document}, but
+   a detached subtree can have any node as its root.  In particular, the
+   argument itself is returned if it does not have a @fun{parent}."
   (check-type node node)
   (loop
      for p = (parent node) then (parent p)
