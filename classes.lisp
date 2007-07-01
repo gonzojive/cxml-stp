@@ -41,35 +41,165 @@
 		  :accessor %namespace-uri)))
 
 (defclass attribute (leaf-node named-node-mixin)
-  ((value :accessor value)))
+  ((value :accessor value))
+  (:documentation
+   "@short{Instances of this class represent attributes of an @class{element},
+    excluding namespace declarations.}
+
+    The @fun{parent} of an attribute is always an @class{element} or nil,
+    but the attribute is not a child of that element.
+ 
+    @see-slot{local-name}
+    @see-slot{namespace-prefix}
+    @see-slot{namespace-uri}
+    @see-slot{qualified-name}
+    @see-slot{value}
+    @see{list-attributes}
+    @see-constructor{make-attribute}"))
 
 (defclass comment (leaf-node)
-  ((data :initarg :data :accessor data)))
+  ((data :initarg :data :accessor data))
+  (:documentation
+   "Instances of this class represent XML comments.
+    @see-slot{data}
+    @see-constructor{make-comment}"))
 
 (defclass document-type (leaf-node)
   ((root-element-name :accessor root-element-name)
    (system-id :initform nil :accessor system-id)
    (public-id :initform nil :accessor public-id)
-   (internal-subset :initform nil :accessor internal-subset)))
+   (internal-subset :initform nil :accessor internal-subset))
+  (:documentation
+   "@short{Instances of this class represent the DOCTYPE declaration at the
+    beginning of a document.}
 
-(defclass document (parent-node) ())
+    The document type is an optional child of a @class{document}.  At most
+    one document type is allowed, and it must precede the document element.
+
+    Since STP checks well-formedness only, not validity, the document type
+    only declares what DTD the document claims to be conforming to, but
+    does not guarantee that it actually does.
+
+    @see-constructor{make-document-type}
+    @see-slot{root-element-name}
+    @see-slot{system-id}
+    @see-slot{public-id}
+    @see-slot{internal-subset}"))
+
+(defclass document (parent-node) ()
+  (:documentation
+   "@short{Instances of this class represent an entire XML document.}
+
+    A document may have at most one document-type, and must have exactly one
+    element as a child (in this order).
+
+    It may also have comments and processing-instructions anywhere.
+
+    @see-constructor{make-document}
+    @see-slot{document-element}
+    @see-slot{document-type}"))
 
 (defclass element (parent-node named-node-mixin)
   ((attributes :initform nil :accessor %attributes)
-   (namespaces :initform nil :accessor %namespaces)))
+   (namespaces :initform nil :accessor %namespaces))
+  (:documentation
+   "@short{Instances of this class represent XML elements with their attributes
+    and namespaces.}
+
+    See @class{node} for functions to query the list of children.
+
+    See @class{parent-node} for functions to add or remove children.
+
+    @see-slot{local-name}
+    @see-slot{namespace-prefix}
+    @see-slot{namespace-uri}
+    @see-slot{qualified-name}
+    @see{add-attribute}
+    @see{remove-attribute}
+    @see{find-attribute-named}
+    @see{find-attribute-if}
+    @see{list-attributes}
+    @see{map-attributes}
+    @see{attribute-value}
+    @see{find-namespace}
+    @see{find-attribute-namespace}
+    @see{find-local-namespace}
+    @see{find-extra-namespace}
+    @see{add-extra-namespace}
+    @see{remove-extra-namespace}
+    @see{map-extra-namespaces}
+   @see-constructor{make-element}"))
 
 (defclass leaf-node (node) ())
 
 (defclass node ()
-  ((parent :initform nil :reader parent :writer (setf %parent))))
+  ((parent :initform nil :reader parent :writer (setf %parent)))
+  (:documentation
+   "@short{The superclass of all nodes.}
+
+    Although only @class{document} and @class{element} allow children,
+    read-only functions accessing the list of children are available for
+    all nodes and always return zero children for other classes.
+
+    @see-slot{parent}
+    @see-slot{base-uri}
+    @see{document}
+    @see{root}
+    @see{detach}
+    @see{copy}
+    @see{serialize}
+    @see{map-children}
+    @see{do-children}
+    @see{list-children}
+    @see{first-child}
+    @see{last-child}
+    @see{nth-child}
+    @see{previous-sibling}
+    @see{next-sibling}
+    @see{count-children}
+    @see{find-child}
+    @see{child-position}
+    @see{count-children-if}
+    @see{find-child-if}
+    @see{child-position-if}
+    @see{filter-children}
+    @see{map-recursively}
+    @see{do-recursively}
+    @see{find-recursively}
+    @see{filter-recursively}"))
 
 (defclass parent-node (node)
   ((%base-uri :initform nil)
-   (%children :initform nil :accessor %children)))
+   (%children :initform nil :accessor %children))
+  (:documentation
+   "@short{Instances of this class can have children.}
+
+    See @class{node} for functions to query the list of children without
+    changing it.
+
+    @see{prepend-child}
+    @see{append-child}
+    @see{delete-nth-child}
+    @see{delete-child}
+    @see{insert-child-before}
+    @see{insert-child-after}
+    @see{replace-child}
+    @see{insert-child}
+    @see{delete-child-if}
+    @see{replace-children}"))
 
 (defclass processing-instruction (leaf-node)
   ((target :initarg :target :accessor target)
-   (data :initarg :data :accessor data)))
+   (data :initarg :data :accessor data))
+  (:documentation
+   "Instances of this class represent processing instructions.
+    @see-slot{target}
+    @see-slot{data}
+    @see-constructor{make-processing-instruction}"))
 
 (defclass text (leaf-node)
-  ((data :initarg :data :accessor data)))
+  ((data :initarg :data :accessor data))
+  (:documentation
+   "Instances of this class represent text nodes.
+    @see-slot{data}
+    @see-constructor{make-text}"))

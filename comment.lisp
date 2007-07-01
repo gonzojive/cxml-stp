@@ -34,7 +34,28 @@
 
 ;;;; Class COMMENT
 
+(defgeneric data (node)
+  (:documentation
+   "@arg[node]{a @class{comment}, @class{processing-instruction},
+      or @class{text}}
+    @return{a string of XML characters}
+    @short{Returns the node's data.}"))
+
+(defgeneric (setf data) (newval node)
+  (:documentation
+   "@arg[newval]{a string of XML characters}
+    @arg[node]{a @class{comment}, @class{processing-instruction},
+      or @class{text}}
+    @return{the data}
+    @short{Sets the node's data.}"))
+
 (defun make-comment (data)
+  "@arg[data]{a string containing XML characters only}
+   @return{an @class{comment}}
+   @short{This function creates a comment node.}
+
+   @code{data} must not contain two consecutive dashes, or a dash
+   at the end."
   (let ((result (make-instance 'comment)))
     (setf (data result) data)
     result))

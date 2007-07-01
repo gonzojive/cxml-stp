@@ -35,6 +35,11 @@
 ;;;; Class DOCUMENT
 
 (defun make-document (document-element)
+  "@arg[document-element]{an @class{element}}
+   @return{an @class{document}}
+   @short{This function creates document.}
+
+   The given element is used as the document's only initial child."
   (check-type document-element element)
   (let ((result (make-instance 'document)))
     (insert-child result document-element 0)

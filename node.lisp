@@ -49,6 +49,18 @@
 
 (defgeneric string-value (node))
 
+(defgeneric parent (node)
+  (:documentation
+   "@arg[node]{an @class{node}}
+    @return{the parent node, or nil}
+    @short{Returns the node's parent.}"))
+
+(defgeneric base-uri (node)
+  (:documentation
+   "@arg[node]{an @class{node}}
+    @return{a string}
+    @short{Returns the node's base URI.}"))
+
 (defun document (node)
   (check-type node node)
   (loop
@@ -312,6 +324,6 @@
 		      collect (if (symbolp arg)
 				  `(,arg (error "slot ~A missing in printed representation"
 						',arg))
-				  args))
+				  arg))
 	    &allow-other-keys)
 	 ,@body))))

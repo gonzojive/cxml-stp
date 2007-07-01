@@ -32,6 +32,13 @@
 (declaim (optimize (debug 2)))
 
 (defun make-stp-builder ()
+  "@return{an STP builder, a SAX handler}
+   @short{This function creates SAX that constructs an STP document.}
+
+   The builder processes SAX events and can be used with any
+   function generating such events, in particular with cxml:parse-file.
+
+   @see{serialize}"
   (make-instance 'builder))
 
 (defclass builder ()

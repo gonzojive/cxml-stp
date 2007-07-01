@@ -35,6 +35,9 @@
 ;;;; Class TEXT
 
 (defun make-text (data)
+  "@arg[data]{a string containing XML characters only}
+   @return{an @class{text}}
+   @short{This function creates a text node.}"
   (let ((result (make-instance 'text)))
     (setf (data result) data)
     result))

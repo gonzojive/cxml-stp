@@ -34,8 +34,56 @@
 
 ;;;; Class DOCUMENT-TYPE
 
+(defgeneric root-element-name (document-type)
+  (:documentation
+   "@arg[document-type]{@class{document-type}}
+    @return{string, a Name}
+    @short{Returns the document-type's root-element-name.}"))
+
+(defgeneric (setf root-element-name) (newval document-type)
+  (:documentation
+   "@arg[newval]{string, a Name}
+    @arg[document-type]{@class{document-type}}
+    @return{the root-element-name}
+    @short{Sets the document-type's root-element-name.}"))
+
+(defgeneric system-id (document-type)
+  (:documentation
+   "@arg[document-type]{@class{document-type}}
+    @return{string suitable as a system ID}
+    @short{Returns the document-type's system-id.}"))
+
+(defgeneric (setf system-id) (newval document-type)
+  (:documentation
+   "@arg[newval]{string, suitable as a system ID}
+    @arg[document-type]{@class{document-type}}
+    @return{the system-id}
+    @short{Sets the document-type's system-id.}"))
+
+(defgeneric public-id (document-type)
+  (:documentation
+   "@arg[document-type]{@class{document-type}}
+    @return{string suitable as a system ID}
+    @short{Returns the document-type's public-id.}"))
+
+(defgeneric (setf public-id) (newval document-type)
+  (:documentation
+   "@arg[newval]{string, suitable as a system ID}
+    @arg[document-type]{@class{document-type}}
+    @return{the public-id}
+    @short{Sets the document-type's public-id.}"))
+
+
 (defun make-document-type
     (root-element-name &optional system-id public-id internal-subset)
+  "@arg[root-element-name]{string, a Name}
+   @arg[system-id]{a string allowed as a system ID}
+   @arg[public-id]{a string allowed as a public ID}
+   @arg[internal-subset]{a well-formed internal subset as a string}
+   @return{an @class{documen-type}}
+   @short{This function creates a document-type node.}
+
+   @see{document}"
   (let ((result (make-instance 'document-type)))
     (setf (root-element-name result) root-element-name)
     (setf (system-id result) system-id)

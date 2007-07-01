@@ -34,7 +34,27 @@
 
 ;;;; Class ATTRIBUTE
 
+(defgeneric value (attribute)
+  (:documentation
+   "@arg[attribute]{an @class{attribute}}
+    @return{a string of XML characters}
+    @short{Returns the attribute's value.}"))
+
+(defgeneric (setf value) (newval attribute)
+  (:documentation
+   "@arg[newval]{a string of XML characters}
+    @arg[attribute]{an @class{attribute}}
+    @return{the value}
+    @short{Sets the attribute's value.}"))
+
 (defun make-attribute (value name &optional (uri ""))
+  "@arg[value]{a string containing XML characters only}
+   @arg[name]{a string, either a QName or an NCName}
+   @arg[uri]{a string, the namespace URI}
+   @return{an @class{attribute}}
+   @short{This function creates an attribute node of the given value and name.}
+
+   @see{element}"
   (let ((result (make-instance 'attribute)))
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)
@@ -88,6 +108,17 @@
   (if a (not b) b))
 
 (defun rename-attribute (attribute prefix uri)
+  "@arg[attribute]{the @class{attribute} to be renamed}
+   @arg[prefix]{string, an NCName}
+   @arg[uri]{a string, the namespace URI}
+   @return{the attribute}
+   @short{This function changed namespace prefix and URI of an attribute.}
+
+   Since there is no default namespace for attributes, prefix and uri must
+   be changed in the same step to rename an attribute with no namespace to
+   an attribute with both namespace prefix and URI.
+
+   @see{local-name}"
   (unless prefix (setf prefix ""))
   (unless uri (setf uri ""))
   (when (equal prefix "xmlns")
@@ -114,7 +145,8 @@
       (check-namespace-uri uri)
       (values
        (setf (%namespace-prefix attribute) prefix)
-       (setf (%namespace-uri attribute) uri)))))
+       (setf (%namespace-uri attribute) uri))))
+  attribute)
 
 (defmethod serialize ((node attribute) handler)
   (stp-error "attempt to serialize an attribute in isolation"))

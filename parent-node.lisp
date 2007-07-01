@@ -36,6 +36,13 @@
 
 ;;; base URI
 
+(defgeneric (setf base-uri) (newval node)
+  (:documentation
+   "@arg[newval]{string, the new base URI}
+    @arg[node]{an @class{parent-node}}
+    @return{the new base URI}
+    @short{Sets the node's base URI.}"))
+
 (defgeneric %base-uri (node))
 (defmethod %base-uri ((node node)) (or (slot-value node '%base-uri) ""))
 (defmethod (setf %base-uri) (newval (node node))

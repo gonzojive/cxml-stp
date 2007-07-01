@@ -34,7 +34,46 @@
 
 ;;;; Class ELEMENT
 
+(defgeneric local-name (node)
+  (:documentation
+   "@arg[node]{an @class{element} or @class{attribute}}
+    @return{string, an NCName}
+    @short{Returns the node's local name.}
+    @see{qualified-name}
+    @see{namespace-uri}
+    @see{namespace-prefix}"))
+
+(defgeneric namespace-uri (node)
+  (:documentation
+   "@arg[node]{an @class{element} or @class{attribute}}
+    @return{string, a URI}
+    @short{Returns the node's namespace URI.}
+    @see{qualified-name}
+    @see{local-name}
+    @see{namespace-prefix}"))
+
+(defgeneric namespace-prefix (node)
+  (:documentation
+   "@arg[node]{an @class{element} or @class{attribute}}
+    @return{string, an NCName}
+    @short{Returns the node's namespace prefix.}
+    @see{qualified-name}
+    @see{local-name}
+    @see{namespace-uri}"))
+
+(defgeneric (setf value) (newval attribute)
+  (:documentation
+   "@arg[newval]{a string of XML characters}
+    @arg[attribute]{an @class{attribute}}
+    @return{the value}
+    @short{Sets the attribute's value.}"))
+
+
 (defun make-element (name &optional (uri ""))
+  "@arg[name]{string, a QName or NCName}
+   @arg[uri]{a string, the namespace URI}
+   @return{an @class{element}}
+   @short{This function creates an element node of the given name.}"
   (let ((result (make-instance 'element)))
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)
@@ -65,6 +104,17 @@
 	  (%attributes old)))
 
 (defun of-name (name &optional (uri ""))
+  "@arg[name]{a string, either a QName or an NCName}
+   @arg[uri]{a string, the namespace URI}
+   @return{an function of one argument}
+   @short{This function creates a test function for nodes of this name.}
+
+   The function returned will return T if the argument is an instance
+   of @class{attribute} or @class{element} and has the specified local-name
+   and namespace URI, and will return NIL otherwise.
+
+   @see{local-name}
+   @see{namespace-uri}"
   (lambda (x)
     (and (typep x 'element)
 	 (or (null name) (equal (local-name x) name))
@@ -145,6 +195,13 @@
   (map result-type fn (%attributes element)))
 
 (defun qualified-name (node)
+  "@arg[node]{an @class{element} or @class{attribute}}
+   @return{string, a QName}
+   @short{Returns the node's qualified name.}
+   The qualified name is computed as prefix ':' local-name.
+   @see{local-name}
+   @see{namespace-uri}
+   @see{namespace-prefix}"
   (let ((prefix (namespace-prefix node))
 	(local-name (local-name node)))
     (if (plusp (length prefix))

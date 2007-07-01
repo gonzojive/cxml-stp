@@ -34,7 +34,28 @@
 
 ;;;; Class PROCESSING-INSTRUCTION
 
+(defgeneric target (processing-instruction)
+  (:documentation
+   "@arg[processing-instruction]{@class{processing-instruction}}
+    @return{string, a Name}
+    @short{Returns the processing-instruction's target.}"))
+
+(defgeneric (setf target) (newval processing-instruction)
+  (:documentation
+   "@arg[newval]{string, a Name}
+    @arg[processing-instruction]{@class{processing-instruction}}
+    @return{the target}
+    @short{Sets the processing-instruction's target.}"))
+
 (defun make-processing-instruction (target data)
+  "@arg[target]{string, an NCName}
+   @arg[data]{string containing XML characters only}
+   @return{an @class{processing-instruction}}
+   @short{This function creates a processing instruction.}
+
+   @code{target} must not equal \"xml\".
+
+   @code{data} must not contain the substring \"?>\"."
   (let ((result (make-instance 'processing-instruction)))
     (setf (target result) target)
     (setf (data result) data)

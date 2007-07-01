@@ -206,8 +206,8 @@
     Making an attribute node:
     <example title="Making an attribute node">
       <repl>CL-USER> (stp:make-attribute "123" 
-				  "a:defaultValue" 
-				  "http://relaxng.org/ns/compatibility/annotations/1.0")</repl>
+                             "a:defaultValue" 
+                             "http://relaxng.org/ns/compatibility/annotations/1.0")</repl>
       <result>
 #.(STP:ATTRIBUTE
    :VALUE "123"
@@ -242,7 +242,7 @@
     Namespaces are declared implicitly.
     <br/>
     <br/>
-    Example:
+    Example (note absence of attributes named <tt>xmlns</tt>):
     <example title="Namespaces are declared implicitly">
       <repl>&lt;element xmlns="http://relaxng.org/ns/structure/1.0"
 	 xmlns:foo="http://foo"
@@ -309,7 +309,7 @@
     <br/>
     <repl>CL-USER> (stp:make-document (stp:make-element "list"))</repl>
     <result>#.(STP:DOCUMENT
-:CHILDREN '(#.(STP:ELEMENT
+   :CHILDREN '(#.(STP:ELEMENT
                   #| :PARENT of type DOCUMENT |#
                   :LOCAL-NAME "list")))</result>
     Children: May have <em>at most one document-type</em>, and
