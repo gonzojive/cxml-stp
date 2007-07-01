@@ -58,6 +58,7 @@
   (let ((result (make-instance 'attribute)))
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)
+      (setf prefix (or prefix ""))
       (setf (local-name result) local-name)
       (rename-attribute result prefix uri)
       (setf (value result) value))

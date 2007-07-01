@@ -322,7 +322,7 @@
 	   (setf (%parent winner) parent)))))
   t)
 
-(defreader parent-node (base-uri children)
+(defreader parent-node ((base-uri "") (children nil))
   (setf (%base-uri this) base-uri)
   (dolist (child children)
     (append-child this child)))

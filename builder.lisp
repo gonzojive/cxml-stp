@@ -44,6 +44,7 @@
 (defclass builder ()
   ((nodes :initform nil :accessor builder-nodes)
    (doctype :initform nil :accessor builder-doctype)
+   (namespace-declarations :initform nil :accessor namespace-declarations)
    (internal-subset-sink :initform nil
 			 :accessor builder-internal-subset-sink)))
 
@@ -80,6 +81,9 @@
 		      (builder-internal-subset-sink builder))))
   (setf (builder-internal-subset-sink builder) nil))
 
+(defmethod sax:start-prefix-mapping ((builder builder) prefix uri)
+  (push (cons (or prefix "") uri) (namespace-declarations builder)))
+
 (defmethod sax:start-element ((builder builder) uri lname qname attrs)
   (let ((element (make-element qname uri)))
     (dolist (a attrs)
@@ -90,6 +94,10 @@
 				   uri)))
 	    (add-attribute element b)))))
     (builder-append builder element)
+    (loop for (prefix . uri) in (namespace-declarations builder) do
+	 (unless (find-namespace prefix element)
+	   (add-extra-namespace element prefix uri)))
+    (setf (namespace-declarations builder) nil)
     (push element (builder-nodes builder))))
 
 (defmethod sax:end-element ((builder builder) uri lname qname)

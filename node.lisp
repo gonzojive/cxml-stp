@@ -31,7 +31,9 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
-(defvar *check-uri-syntax* t)
+(defvar *check-uri-syntax* t
+  "If true (the default), a warning is issued if a string specified
+   as a namespace URI does not have URI syntax.")
 (defun check-namespace-uri (uri)
   (when (and *check-uri-syntax* (not (search "://" uri)))
     (warn "namespace URI does not look like an absolute URL: ~S" uri)))

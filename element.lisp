@@ -77,6 +77,7 @@
   (let ((result (make-instance 'element)))
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)
+      (setf prefix (or prefix ""))
       (setf (namespace-prefix result) prefix)
       (setf (namespace-uri result) uri)
       (setf (local-name result) local-name))
@@ -275,9 +276,10 @@
    This functions returns the same result as @fun{find-local-namespace}
    if the namespace is declared directly on @code{element}.  Otherwise
    it takes into account namespaces declared on parent elements."
+  (setf prefix (or prefix ""))
   (cond
     ((find-local-namespace prefix element))
-    ((parent element)
+    ((typep (parent element) 'element)
       (find-namespace prefix (parent element)))
     ((equal prefix "")
       "")
@@ -285,6 +287,7 @@
       nil)))
 
 (defun find-attribute-namespace (prefix element)
+  (setf prefix (or prefix ""))
   (unless (equal prefix "")
     (let ((a (find prefix
 		   (%attributes element)
@@ -304,6 +307,7 @@
    The namespaces considered by this function are: The namespace of the element
    itself.  The namespaces of element's attributes.  Extra namespaces declared
    by the element.  The \"xmlns\" namespace, which is always fixed."
+  (setf prefix (or prefix ""))
   (cond
     ((equal prefix (namespace-prefix element))
       (namespace-uri element))
