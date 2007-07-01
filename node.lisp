@@ -83,19 +83,61 @@
 ;;         (base-uri parent)
 ;;         "")))
 
-(defgeneric detach (node))
+(defgeneric detach (node)
+  (:documentation
+   "@arg[node]{a @class{node}}
+    @short{This function removes a child node or attribute.}
+
+    In contrast to functions for child nodes, this function can also remove
+    an attribute from its parent.
+
+    @see{parent}"))
 (defmethod detach ((node node))
   (when (parent node)
     (delete-child node (parent node))))
 
-(defgeneric copy (node))
-(defgeneric serialize (node handler))
+(defgeneric copy (node)
+  (:documentation
+   "@arg[node]{a @class{node}}
+    @short{This function copies a node recursively.}
+
+    The resulting node is of the same class as the argument, and all
+    child nodes and attributes are copied in the same way.
+
+    Shared structure includes only primitive slot values like strings.
+    The consequences are undefined if user code mutates such values, whether
+    @code{copy} is used or not."))
+
+(defgeneric serialize (node handler)
+  (:documentation
+   "@arg[node]{a @class{node}}
+    @short{This function generates SAX events representing @code{node}.}
+
+    Use this function together with a serialization sink to generate
+    a serialized XML document."))
 
 ;;; CHILDREN-related convenience functions
 
-(defgeneric map-children (result-type function node))
+(defgeneric map-children (result-type function node)
+  (:documentation
+   "@arg[result-type]{a sequence type specifier, or nil}
+    @arg[function]{a designator for a function of one argument}
+    @arg[node]{a @class{node}}
+    @return{an sequence of @code{result-type}, or nil}
+    @short{Applies @code{function} to successive child nodes.}
+
+    The @code{result-type} specifies the type of the resulting sequence.
+    @code{map-children} returns nil if @code{result-type} is nil.  Otherwise
+    it returns a sequence such that element i is the result of applying
+    @code{function} to child i of @class{node}."))
 
 (defmacro do-children ((var node &optional result) &body body)
+  "@arg[var]{symbol, a variable name}
+   @arg[node]{a @class{node}}
+   @arg[result]{a form}
+   @return{the result of evaluating @code{result}}
+   Executes @code{bode} with @code{var} bound to successive child
+     nodes."
   `(block nil
      (map-children nil (lambda (,var) ,@body) ,node)
      (let (,var)
@@ -103,23 +145,44 @@
        ,result)))
 
 (defun list-children (node)
+  "@arg[node]{a @class{node}}
+   @return{a list of nodes}
+   Returns a freshly consed list containing the child nodes of @code{node}."
   (map-children 'list #'identity node))
 
-(defun nth-child (idx parent)
-  (elt (%children parent) idx))
+(defun nth-child (n parent)
+  "@arg[n]{a non-negative integer}
+   @arg[parent]{a @class{node}}
+   @return{a @class{node}}
+   @short{Returns child node @code{n} of @code{parent}}, or signals an error
+   if n is negative or as large or larger that the number of child nodes."
+  (elt (%children parent) n))
 
 (defun first-child (node)
+  "@arg[node]{a @class{node}}
+   @return{a @class{node} or nil}
+   Returns first child of @code{node}, or nil."
   (let ((c (%children node)))	   ;VECTOR or NIL, but not arbitrary list
     (when (plusp (length c))
       (elt c 0))))
 
 (defun last-child (node)
+  "@arg[node]{a @class{node}}
+   @return{a @class{node} or nil}
+   Returns last child of @code{node}, or nil."
   (let* ((c (%children node))	   ;VECTOR or NIL, but not arbitrary list
 	 (l (length c)))
     (when (plusp l)
       (elt c (1- l)))))
 
 (defun previous-sibling (node)
+  "@arg[node]{a @class{node}}
+   @return{a @class{node} or nil}
+   @short{Returns the child preceding @code{node} in the child list of its
+     parent.}
+
+   Signals an error if @code{node} has no parent or is the first child of its
+   parent."
   (let ((p (parent node)))
     (unless p
       (stp-error "node has no parent"))
@@ -129,6 +192,13 @@
       (nth-child idx p))))
 
 (defun next-sibling (node)
+  "@arg[node]{a @class{node}}
+   @return{a @class{node} or nil}
+   @short{Returns the child following @code{node} in the child list of its
+     parent.}
+
+   Signals an error if @code{node} has no parent or is the last child of its
+   parent."
   (let ((p (parent node)))
     (unless p
       (stp-error "node has no parent"))
@@ -140,40 +210,126 @@
 
 (defun count-children
     (value parent &rest args &key from-end (start 0) end key test)
+  "@arg[value]{an object}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @return{a non-negative integer less than or equal to the number of
+     child nodes}
+   Counts and returns the number child @code{parent}'s nodes satisfying the
+   test.
+   @see{count-children-if}"
   (declare (ignore from-end start end key test))
   (apply #'count value (%children parent) args))
 
 (defun count-children-if
-    (value parent &rest args &key from-end (start 0) end key test)
-  (declare (ignore from-end start end key test))
-  (apply #'count-if value (%children parent) args))
+    (predicate parent &rest args &key from-end (start 0) end key)
+  "@arg[predicate]{a designator for a function of one argument that returns
+     a generalized boolean}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @return{a non-negative integer less than or equal to the number of
+     child nodes}
+   Counts and returns the number child @code{parent}'s nodes satisfying
+   @code{predicate}.
+   @see{count-children}"
+  (declare (ignore from-end start end key))
+  (apply #'count-if predicate (%children parent) args))
 
 (defun find-child
     (value parent &rest args &key from-end (start 0) end key test)
+  "@arg[value]{an object}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @return{a @class{node} or nil}
+   Searches for an child node of @code{parent} that satisfies the @code{test}
+   and returns it.
+
+   @see{find-child-if}"
   (declare (ignore from-end start end key test))
   (apply #'find value (%children parent) args))
 
 (defun find-child-if
     (predicate parent &rest args &key from-end (start 0) end key)
+  "@arg[predicate]{a designator for a function of one argument that returns
+     a generalized boolean}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @return{a @class{node} or nil}
+   Searches for an child node of @code{parent} that satisfies @code{predicate}
+   and returns it.
+
+   @see{find-child}"
   (declare (ignore from-end start end key))
   (apply #'find-if predicate (%children parent) args))
 
 (defun child-position
     (value parent &rest args &key from-end (start 0) end key test)
+  "@arg[value]{an object}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @return{a @class{node} or nil}
+   Searches for an child node of @code{parent} that satisfies the @code{test}
+   and returns its position.
+
+   @see{child-position-if}"
   (declare (ignore from-end start end key test))
   (apply #'position value (%children parent) args))
 
 (defun child-position-if
     (predicate parent &rest args &key from-end (start 0) end key)
+  "@arg[predicate]{a designator for a function of one argument that returns
+     a generalized boolean}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @return{a @class{node} or nil}
+   Searches for an child node of @code{parent} that satisfies the @code{test}
+   and returns its position.
+
+   @see{child-position}"
   (declare (ignore from-end start end key))
   (apply #'position-if predicate (%children parent) args))
 
 (defun filter-children
     (predicate parent &rest args &key from-end (start 0) end count key)
+  "@arg[predicate]{a designator for a function of one argument that returns
+     a generalized boolean}
+   @arg[parent]{a @class{node}}
+   @arg[from-end]{a generalized boolead}
+   @arg[start, end]{bounding index designators for @code{parent}'s child list}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @arg[count]{an integer or nil}
+   @return{a @class{node} or nil}
+   @short{Return a list of child nodes of @code{parent} from which nodes that
+     do not satisfy @code{predicate} have been removed.}
+
+   This function returns the same list as @code{remove-if-not} on the result
+   of @fun{list-children}."
   (declare (ignore from-end start end count key))
   (apply #'remove-if-not predicate (%children parent) args))
 
 (defun map-recursively (fn node)
+  "@arg[fn]{a designator for a function of one argument}
+   @arg[node]{a @class{node}}
+   @return{nil}
+   Applies @code{fn} to successive descendants of @code{node} in
+   pre-order."
   (map nil
        (lambda (c)
 	 (funcall fn c)
@@ -181,6 +337,12 @@
        (%children node)))
 
 (defmacro do-recursively ((var node &optional result) &body body)
+  "@arg[var]{symbol, a variable name}
+   @arg[node]{a @class{node}}
+   @arg[result]{a form}
+   @return{the result of evaluating @code{result}}
+   Executes @code{bode} with @code{var} bound to successive descendants of
+   @code{node} in pre-order."
   `(block nil
      (map-recursively (lambda (,var) ,@body) ,node)
      (let (,var)
@@ -188,6 +350,15 @@
        ,result)))
 
 (defun find-recursively (item node &key key test)
+  "@arg[item]{an object}
+   @arg[node]{a @class{node}}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @return{a @class{node} or nil}
+   Searches in pre-order for the first descendant of @code{node} that
+   satisfies the @code{test} and returns it.
+
+   @see{find-child-if}"
   (setf key (or key #'identity))
   (setf test (or key #'eql))
   (do-recursively (child node)
@@ -195,6 +366,14 @@
       (return child))))
 
 (defun filter-recursively (test node &key key)
+  "@arg[predicate]{a designator for a function of one argument that returns
+     a generalized boolean}
+   @arg[node]{a @class{node}}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @arg[test]{a designator for a function of two arguments, or nil}
+   @return{a @class{node} or nil}
+   Return a list of descendant nodes of @code{node} in pre-order, from which
+   nodes that do not satisfy @code{predicate} have been removed."
   (setf key (or key #'identity))
   (setf test (or key #'eql))
   (let ((result '()))

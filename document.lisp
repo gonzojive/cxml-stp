@@ -108,6 +108,10 @@
       (stp-error "attempt to insert document type after document element"))))
 
 (defun document-type (document)
+  "@arg[document]{a @class{document}}
+   @return{a @class{document-type}, or nil}
+   This function returns the child node that is a document type, or nil.
+   @see{document-element}"
   (find-if (alexandria:of-type 'document-type) (%children document)))
 
 ;; zzz gefaellt mir nicht
@@ -123,6 +127,10 @@
 	  (insert-child document newval 0)))))
 
 (defun document-element (document)
+  "@arg[document]{a @class{document}}
+   @return{an @class{element}}
+   This function returns the child node that is an element.
+   @see{document-type}"
   (find-if (alexandria:of-type 'element) (%children document)))
 
 ;; zzz gefaellt mir nicht

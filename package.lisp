@@ -203,7 +203,6 @@
     @aboutfun{count-children}
     @aboutfun{count-children-if}
     @aboutfun{filter-children}
-    @aboutfun{filter-children}
     The functions listed above walk only across the direct children of the
     parent node.  In addition, the node hierarchy can be mapped recursively
     using these functions:
