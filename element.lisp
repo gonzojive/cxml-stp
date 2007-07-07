@@ -117,7 +117,7 @@
    @see{local-name}
    @see{namespace-uri}"
   (lambda (x)
-    (and (typep x 'element)
+    (and (typep x '(or attribute element))
 	 (or (null name) (equal (local-name x) name))
 	 (equal (namespace-uri x) uri))))
 
@@ -239,17 +239,20 @@
    were variables.
 
    Each entry in @code{entries} is a list of the form
-   (variable-name attribute-name), where variable-name is a symbol and
-   attribute-name a string.
+   @em{(variable-name attribute-name &optional uri)}, where
+   @code{variable-name}
+   is a symbol and @code{attribute-name} and @code{uri} are strings.
 
    The macro with-attributes invokes @fun{attribute-value}
    to access the attributes. specified by each entry.
    Both setf and setq can be used to set the value of the attribute."
   (alexandria:once-only (element)
     `(symbol-macrolet
-	 ,(loop
-	     for (var attribute-name) in entries
-	     collect `(,var (attribute-value ,element ,attribute-name)))
+	 ,(mapcar (lambda (entry)
+		    (destructuring-bind (var name &optional (uri ""))
+			entry
+		      `(,var (attribute-value ,element ,name ,uri))))
+		  entries)
        ,@body)))
 
 (defun list-attributes (element)

@@ -95,9 +95,7 @@
 
 	   #:make-stp-builder)
   (:documentation
-   "STP is a data structure for well-formed XML documents, designed for
-    Common Lisp.  Inspired by XOM, it provides an alternative to the W3C's
-    DOM.
+   "STP is a data structure for well-formed XML documents.
 
     @begin[Parsing and Serializing]{section}
     To parse into STP, use an STP builder together with a function

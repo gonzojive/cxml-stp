@@ -215,6 +215,15 @@
    :NAMESPACE-PREFIX "a"
    :NAMESPACE-URI "http://relaxng.org/ns/compatibility/annotations/1.0")</result>
     </example>
+    <br/>
+    Working with attributes as nodes:
+    <code>(defun <b>list-attributes</b> (element) ...)
+
+(defun <b>add-attribute</b> (element attribute) ...)
+(defun <b>remove-attribute</b> (element attribute) ...)
+
+(defun <b>find-attribute-named</b> (element name &amp;optional (uri "")) ...)
+(defun <b>find-attribute-if</b> (test element) ...)</code>
   </page>
 
   <page title="Attributes (3)"
@@ -226,15 +235,24 @@
 (defun <b>(setf attribute-value)</b> (newval element name &amp;optional uri) ...)</code>
     </example>
     <br/>
-    <br/>
-    Attributes as nodes:
-    <code>(defun <b>list-attributes</b> (element) ...)
-
-(defun <b>add-attribute</b> (element attribute) ...)
-(defun <b>remove-attribute</b> (element attribute) ...)
-
-(defun <b>find-attribute-named</b> (element name &amp;optional (uri "")) ...)
-(defun <b>find-attribute-if</b> (test element) ...)</code>
+    <tt>with-attributes</tt> is like <tt>with-accessors</tt>:
+    <example title="with-attributes">
+      <repl>(let ((e (stp:document-element
+	  (cxml:parse-rod "&lt;foo a='quux'/>" (stp:make-stp-builder)))))
+  (<b>stp:with-attributes ((a "a") (b "x:b" "http://foo")) e</b>
+    (setf b (concatenate 'string ".oO(" a ")"))
+    e))</repl>
+      <result>#.(CXML-STP:ELEMENT
+   :ATTRIBUTES '(#.(CXML-STP:ATTRIBUTE
+                    :VALUE ".oO(quux)"
+                    :LOCAL-NAME "b"
+                    :NAMESPACE-PREFIX "x"
+                    :NAMESPACE-URI "http://foo")
+                 #.(CXML-STP:ATTRIBUTE
+                    :VALUE "1"
+                    :LOCAL-NAME "a"))
+   :LOCAL-NAME "foo")</result>
+    </example>
   </page>
 
   <page title="Namespaces: No xmlns attributes"
