@@ -45,15 +45,16 @@
 (defmethod copy ((node text))
   (make-instance 'text :data (data node)))
 
-(defmethod string-value ((node attribute))
+(defmethod string-value ((node text))
   (data node))
 
-(defmethod (setf data) :before (newval (node text))
+(defmethod (setf data) :around (newval (node text))
   (unless newval (setf newval ""))
   (unless (xml-characters-p newval)
     (stp-error "text includes characters that cannot be ~
                 represented in XML at all: ~S"
-	       newval)))
+	       newval))
+  (call-next-method newval node))
 
 (defmethod serialize ((node text) handler)
   (sax:characters handler (data node)))

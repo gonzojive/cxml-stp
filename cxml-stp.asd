@@ -29,3 +29,10 @@
      (:file "text")
      (:file "builder"))
     :depends-on (:cxml :alexandria))
+
+(defsystem :cxml-stp-test
+    :default-component-class closure-source-file
+    :serial t
+    :components
+    ((:file "test"))
+    :depends-on (:cxml-stp :rt))

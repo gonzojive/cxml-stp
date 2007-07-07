@@ -63,7 +63,7 @@
 (defmethod copy ((node comment))
   (make-instance 'comment :data (data node)))
 
-(defmethod string-value ((node attribute))
+(defmethod string-value ((node comment))
   (data node))
 
 (defmethod (setf data) :before (newval (node comment))

@@ -140,7 +140,9 @@
     @short{This function generates SAX events representing @code{node}.}
 
     Use this function together with a serialization sink to generate
-    a serialized XML document."))
+    a serialized XML document.
+
+    @see{make-builder}"))
 
 ;;; CHILDREN-related convenience functions
 

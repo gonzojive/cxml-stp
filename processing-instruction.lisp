@@ -66,7 +66,7 @@
     :target (target node)
     :data (data node)))
 
-(defmethod string-value ((node attribute))
+(defmethod string-value ((node processing-instruction))
   (data node))
 
 (defmethod (setf target) :before (newval (node processing-instruction))

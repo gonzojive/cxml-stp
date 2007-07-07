@@ -2,6 +2,7 @@
   (:use :cl)
   (:nicknames :stp)
   (:export #:*check-uri-syntax*
+	   #:stp-error
 
 	   #:node
 	   #:parent
