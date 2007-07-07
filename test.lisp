@@ -8,7 +8,7 @@
   (declare (ignore handler))
   (apply #'cxml:parse-file
 	 filename
-	 (read-from-string "#.(cxml-stp:make-stp-builder)")
+	 (read-from-string "#.(cxml-stp:make-builder)")
 	 :recode t
 	 args))
 

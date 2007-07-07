@@ -31,8 +31,8 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
-(defun make-stp-builder ()
-  "@return{an STP builder, a SAX handler}
+(defun make-builder ()
+  "@return{STP builder, a SAX handler}
    @short{This function creates SAX that constructs an STP document.}
 
    The builder processes SAX events and can be used with any

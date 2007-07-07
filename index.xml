@@ -75,7 +75,7 @@
   </p>
   <pre class="code">(defparameter *example*
     (cxml:parse-file "example.xml" (<a
-    href="doc/pages/cxml-stp__make-stp-builder.html">cxml-stp:make-stp-builder</a>)))</pre>
+    href="doc/pages/cxml-stp__make-builder.html">cxml-stp:make-builder</a>)))</pre>
   <p>
     Serialize STP by sending SAX events for the tree to a sink:
   </p>

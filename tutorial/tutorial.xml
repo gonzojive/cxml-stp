@@ -28,7 +28,7 @@
     <example title="To parse into STP, use an STP builder together with a
 		   function generating SAX events:">
       <code>(<b>cxml:parse-file</b> "example.xml" (<a
-						    href="doc/pages/cxml-stp__make-stp-builder.html"><b>stp:make-stp-builder</b></a>))</code>
+						    href="doc/pages/cxml-stp__make-builder.html"><b>stp:make-builder</b></a>))</code>
     </example>
     <br/>
     Serializing back into XML:
@@ -238,7 +238,7 @@
     <tt>with-attributes</tt> is like <tt>with-accessors</tt>:
     <example title="with-attributes">
       <repl>(let ((e (stp:document-element
-	  (cxml:parse-rod "&lt;foo a='quux'/>" (stp:make-stp-builder)))))
+	  (cxml:parse-rod "&lt;foo a='quux'/>" (stp:make-builder)))))
   (<b>stp:with-attributes ((a "a") (b "x:b" "http://foo")) e</b>
     (setf b (concatenate 'string ".oO(" a ")"))
     e))</repl>

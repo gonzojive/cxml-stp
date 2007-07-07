@@ -93,7 +93,7 @@
 	   #:text
 	   #:make-text
 
-	   #:make-stp-builder)
+	   #:make-builder)
   (:documentation
    "STP is a data structure for well-formed XML documents.
 
@@ -101,7 +101,7 @@
     To parse into STP, use an STP builder together with a function
     generating SAX events:
 
-    @aboutfun{make-stp-builder}
+    @aboutfun{make-builder}
     Serialize STP by sending SAX events for the tree to a sink:
 
     @aboutfun{serialize}
