@@ -234,6 +234,24 @@
 	(add-attribute element (make-attribute newval name uri)))
     newval))
 
+(defmacro with-attributes ((&rest entries) element &body body)
+  "Evaluate body with the specified attributes bound lexically as if they
+   were variables.
+
+   Each entry in @code{entries} is a list of the form
+   (variable-name attribute-name), where variable-name is a symbol and
+   attribute-name a string.
+
+   The macro with-attributes invokes @fun{attribute-value}
+   to access the attributes. specified by each entry.
+   Both setf and setq can be used to set the value of the attribute."
+  (alexandria:once-only (element)
+    `(symbol-macrolet
+	 ,(loop
+	     for (var attribute-name) in entries
+	     collect `(,var (attribute-value ,element ,attribute-name)))
+       ,@body)))
+
 (defun list-attributes (element)
   "@arg[element]{an @class{element}}
    @return{a list of @class{attribute} nodes}

@@ -63,6 +63,7 @@
 	   #:find-attribute-if
 	   #:attribute-value
 	   #:list-attributes
+	   #:with-attributes
 	   #:map-attributes
 	   #:find-namespace
 	   #:find-local-namespace
@@ -252,6 +253,7 @@
     @aboutfun{find-attribute-if}
     @aboutfun{list-attributes}
     @aboutfun{map-attributes}
+    @aboutmacro{with-attributes}
     As a shortcut, the @fun{attribute-value} and its @code{setf} function
     allow access to attribute values by name, without having to look up the
     attribute node first:

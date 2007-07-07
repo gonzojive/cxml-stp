@@ -118,6 +118,7 @@
     @see{remove-attribute}
     @see{find-attribute-named}
     @see{find-attribute-if}
+    @see{with-attributes}
     @see{list-attributes}
     @see{map-attributes}
     @see{attribute-value}
