@@ -74,7 +74,7 @@
   (when (string-equal newval "xml")
     (stp-error "attempt to pretend that a PI is an XMLDecl")))
 
-(defmethod (setf data) :before (newval (node processing-instruction))
+(defmethod (setf data) :around (newval (node processing-instruction))
   (unless newval (setf newval ""))
   (unless (xml-characters-p newval)
     (stp-error "Processing instruction data includes characters that ~
@@ -82,10 +82,12 @@
 	       newval))
   (when (search "?>" newval)
     (stp-error "forbidden -- in processing-instruction"))
-  (when (or (alexandria:starts-with 10 newval :key #'char-code)
+  (when (or (alexandria:starts-with 9 newval :key #'char-code)
+	    (alexandria:starts-with 10 newval :key #'char-code)
 	    (alexandria:starts-with 13 newval :key #'char-code)
 	    (alexandria:starts-with 32 newval :key #'char-code))
-    (stp-error "space at beginning of processing instruction data")))
+    (stp-error "space at beginning of processing instruction data"))
+  (call-next-method newval node))
 
 (defmethod serialize ((node processing-instruction) handler)
   (sax:processing-instruction handler (target node) (data node)))

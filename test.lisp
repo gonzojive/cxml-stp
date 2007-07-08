@@ -33,8 +33,7 @@
 (in-package :cxml-stp-test)
 
 (defmethod xmlconf::serialize-document ((document node))
-  (let ((cxml-stp::*serialize-canonical-notations-only-p* t))
-    (serialize document (cxml:make-octet-vector-sink :canonical 2))))
+  (serialize document (cxml:make-octet-vector-sink :canonical 2)))
 
 (defun stp-test (filename handler &rest args)
   (declare (ignore handler))
@@ -55,7 +54,7 @@
   (unless (equal a b)
     (error "assertion failed: ~S and ~S are not EQUAL" a b)))
 
-(defmacro expect-exception (form type)
+(defmacro expect-condition (form type)
   `(handler-case
        (progn
 	 ,form
@@ -70,7 +69,7 @@
 (defmacro define-exception-test (name form type)
   `(deftest ,name
        (progn
-	 (expect-exception ,form ,type)
+	 (expect-condition ,form ,type)
 	 (values))))
 
 (rem-all-tests)
@@ -164,7 +163,7 @@
 (deftest text.leaf-node
     (let ((c1 (make-text "data")))
       (assert-equal 0 (count-children-if #'identity c1))
-      (expect-exception (nth-child 0 c1) error)
+      (expect-condition (nth-child 0 c1) error)
       (assert-equal nil (parent c1))
       (let ((e (make-element "test")))
 	(append-child e c1)
@@ -214,8 +213,8 @@
       (setf (data c) "legal")
       (assert-equal (data c) "legal")
       (assert-equal (string-value c) "legal")
-      (expect-exception (setf (data c) "test -- test") stp-error)
-      (expect-exception (setf (data c) "test-") stp-error)
+      (expect-condition (setf (data c) "test -- test") stp-error)
+      (expect-condition (setf (data c) "test-") stp-error)
       (setf (data c) nil)
       (assert-equal (data c) "")
       (values)))
@@ -227,7 +226,7 @@
 (deftest comment.leaf-node
     (let ((c1 (make-comment "data")))
       (assert-equal 0 (count-children-if #'identity c1))
-      (expect-exception (nth-child 0 c1) error)
+      (expect-condition (nth-child 0 c1) error)
       (assert-equal nil (parent c1))
       (let ((e (make-element "test")))
 	(append-child e c1)
@@ -255,6 +254,120 @@
 (define-exception-test comment.only-char-allowed
     (make-comment (format nil " ~C " (code-char 1)))
   stp-error)
+
+
+;;;; PROCESSING-INSTRUCTION
+
+(deftest pi.constructor.1
+    (let ((p-i (make-processing-instruction "abc" "def")))
+      (assert-equal (target p-i) "abc")
+      (assert-equal (data p-i) "def")
+      (values)))
+
+(deftest pi.constructor.2
+    (data (make-processing-instruction "abc" ""))
+  "")
+
+(deftest pi.constructor.3
+    (data (make-processing-instruction "abc" nil))
+  "")
+
+(deftest pi.constructor.4
+    (target (make-processing-instruction "abc123" nil))
+  "abc123")
+
+(deftest pi.constructor.illegal
+    (progn
+      (expect-condition (make-processing-instruction "test:test" "test")
+			stp-error)
+      (expect-condition (make-processing-instruction "" "test")
+			stp-error)
+      (expect-condition (make-processing-instruction nil "test")
+			stp-error)
+      (expect-condition (make-processing-instruction "12345" "test")
+			stp-error)
+      (values)))
+
+(deftest pi.serialize
+    (serialize-to-string (make-processing-instruction "abc" "def"))
+  "<?abc def?>")
+
+(deftest pi.serialize.2
+    (serialize-to-string (make-processing-instruction "abc" ""))
+  "<?abc?>")
+
+(deftest pi.serialize.3
+    (serialize-to-string
+     (make-processing-instruction "target" "<test>&amp;&greater;"))
+  "<?target <test>&amp;&greater;?>")
+
+(deftest pi.copy
+    (let* ((c1 (make-processing-instruction "target" "data"))
+	   (c2 (copy c1)))
+      (assert (not (eq c1 c2)))
+      (assert-equal (data c1) (data c2))
+      (assert-equal (target c1) (target c2))
+      (assert-equal nil (parent c2))
+      (assert-equal (type-of c2) 'processing-instruction)
+      (values)))
+
+(deftest pi.setf
+    (let* ((p-i (make-processing-instruction "target" "data")))
+      (expect-condition (setf (data p-i) "?>") stp-error)
+      (expect-condition (setf (data p-i) "uhesta ?>") stp-error)
+      (expect-condition (setf (data p-i) "uhesta ?> hst") stp-error)
+      (setf (data p-i) nil)
+      (assert-equal (data p-i) "")
+      (dolist (str '("<html></html>"
+		     "name=value"
+		     "name='value'"
+		     "name=\"value\""
+		     "salkdhsalkjhdkjsadhkj sadhsajkdh"
+		     "<?"
+		     "? >"
+		     "--"))
+	(setf (data p-i) str)
+	(assert-equal (data p-i) str))
+      (values)))
+
+;;; zzz testCorrectSurrogates
+;;; zzz testSurrogates
+
+(deftest pi.leaf-node
+    (let ((c1 (make-processing-instruction "target" "data")))
+      (assert-equal 0 (count-children-if #'identity c1))
+      (expect-condition (nth-child 0 c1) error)
+      (assert-equal nil (parent c1))
+      (let ((e (make-element "test")))
+	(append-child e c1)
+	(assert-equal e (parent c1))
+	(assert-equal c1 (nth-child 0 e))
+	(delete-child c1 e)
+	(assert-equal 0 (count-children-if #'identity e)))
+      (values)))
+
+;;; zzz das pruefen wir nicht
+;; (define-exception-test pi.cr
+;;     (make-processing-instruction "target" (format nil "foo ~C bar" (code-char 13)))
+;;   stp-error)
+
+(deftest pi.invalid
+    (dolist (str (list "  initial spaces"
+		       (format nil "~Cinitial tab" (code-char 9))
+		       (format nil "~Cinitial newline" (code-char 10))
+		       (format nil "~Cinitial cr" (code-char 13)))
+	     (values))
+      (expect-condition (make-processing-instruction "target" str) stp-error)))
+
+(deftest pi.invalid.xml
+    (dolist (str (list "xml" "XML" "Xml")
+	     (values))
+      (expect-condition (make-processing-instruction str "data") stp-error)))
+
+(deftest pi.invalid.colon
+    (dolist (str (list "pre:target" "pre:" ":target")
+	     (values))
+      (expect-condition (make-processing-instruction str "data") stp-error)))
 
 
 (do-tests)
