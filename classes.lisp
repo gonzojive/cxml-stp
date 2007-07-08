@@ -26,7 +26,7 @@
 ;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(in-package :cxml-stp)
+(in-package :cxml-stp-impl)
 
 #+sbcl
 (declaim (optimize (debug 2)))
@@ -64,7 +64,7 @@
     @see-slot{data}
     @see-constructor{make-comment}"))
 
-(defclass document-type (leaf-node)
+(defclass cxml-stp:document-type (leaf-node)
   ((root-element-name :accessor root-element-name)
    (system-id :initform nil :accessor system-id)
    (public-id :initform nil :accessor public-id)
@@ -85,8 +85,9 @@
     @see-slot{system-id}
     @see-slot{public-id}
     @see-slot{internal-subset}"))
+(setf (find-class 'document-type) (find-class 'cxml-stp:document-type))
 
-(defclass document (parent-node) ()
+(defclass cxml-stp:document (parent-node) ()
   (:documentation
    "@short{Instances of this class represent an entire XML document.}
 
@@ -98,6 +99,7 @@
     @see-constructor{make-document}
     @see-slot{document-element}
     @see-slot{document-type}"))
+(setf (find-class 'document) (find-class 'cxml-stp:document))
 
 (defclass element (parent-node named-node-mixin)
   ((attributes :initform nil :accessor %attributes)

@@ -276,3 +276,7 @@
     @aboutfun{find-extra-namespace}
     @aboutfun{map-extra-namespaces}
     @end{section}"))
+
+(defpackage :cxml-stp-impl
+  (:use :cl :stp)
+  (:shadow #:document #:document-type))

@@ -26,7 +26,7 @@
 ;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(in-package :cxml-stp)
+(in-package :cxml-stp-impl)
 
 #+sbcl
 (declaim (optimize (debug 2)))
@@ -80,7 +80,7 @@
     @return{a string}
     @short{Returns the node's base URI.}"))
 
-(defun document (node)
+(defun cxml-stp:document (node)
   (check-type node node)
   (loop
      for parent = node then (parent parent)
@@ -441,7 +441,8 @@
 			      (when (or (null test) (funcall test value))
 				(list (list key value))))))
 			(slots-for-print-object node)))
-	 (constructor (class-name (class-of node)))
+	 (constructor
+	  (intern (symbol-name (class-name (class-of node))) :cxml-stp-impl))
 	 (level *print-level*)
 	 (length *print-length*)
 	 (*print-level* nil)
@@ -482,14 +483,12 @@
 			      (when (or (null test) (funcall test value))
 				(list (list key value))))))
 			(slots-for-print-object node)))
-	 (constructor (class-name (class-of node)))
+	 (constructor
+	  (intern (symbol-name (class-name (class-of node))) :cxml-stp-impl))
 	 (level *print-level*)
 	 (length *print-length*)
 	 (*print-level* nil)
 	 (*print-length* nil))
-    (when (eq constructor 'document-type)
-      ;; zzz FIXME!
-      (setf constructor '%document-type))
     (write-string "#.(" stream)
     (write constructor :stream stream)
     (let ((remaining-slots slots))
@@ -513,10 +512,7 @@
   (:method-combination progn))
 
 (defmacro defreader (name (&rest args) &body body)
-  (let ((fn name))
-    (when (eq fn 'document-type)
-      ;; zzz FIXME!
-      (setf fn '%document-type))
+  (let ((fn (intern (symbol-name name) :cxml-stp-impl)))
     `(progn
        (defun ,fn (&rest keys)
 	 "@unexport{}"

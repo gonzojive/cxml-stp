@@ -26,7 +26,7 @@
 ;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(in-package :cxml-stp)
+(in-package :cxml-stp-impl)
 
 #+sbcl
 (declaim (optimize (debug 2)))
@@ -107,7 +107,7 @@
     (when (and dt (> dt de))
       (stp-error "attempt to insert document type after document element"))))
 
-(defun document-type (document)
+(defun cxml-stp:document-type (document)
   "@arg[document]{a @class{document}}
    @return{a @class{document-type}, or nil}
    This function returns the child node that is a document type, or nil.
@@ -115,7 +115,7 @@
   (find-if (alexandria:of-type 'document-type) (%children document)))
 
 ;; zzz gefaellt mir nicht
-(defun (setf document-type) (newval document)
+(defun (setf cxml-stp:document-type) (newval document)
   (check-type newval document-type)
   (let ((old (document-type document)))
     (unless (eq newval old)
