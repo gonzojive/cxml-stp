@@ -66,7 +66,7 @@
 (defmethod string-value ((node comment))
   (data node))
 
-(defmethod (setf data) :before (newval (node comment))
+(defmethod (setf data) :around (newval (node comment))
   (unless newval (setf newval ""))
   (unless (xml-characters-p newval)
     (stp-error "comment data includes characters that cannot be ~
@@ -75,7 +75,8 @@
   (when (search "--" newval)
     (stp-error "forbidden -- in comment"))
   (when (alexandria:ends-with #\- newval)
-    (stp-error "- at end of comment")))
+    (stp-error "- at end of comment"))
+  (call-next-method newval node))
 
 (defmethod serialize ((node comment) handler)
   (sax:comment handler (data node)))

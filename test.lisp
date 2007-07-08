@@ -1,3 +1,32 @@
+;;; -*- show-trailing-whitespace: t; indent-tabs: nil -*-
+
+;;; Copyright (c) 2007 David Lichteblau. All rights reserved.
+;;; (but mostly transcribed from nu/xom/tests/*)
+
+;;; Redistribution and use in source and binary forms, with or without
+;;; modification, are permitted provided that the following conditions
+;;; are met:
+;;;
+;;;   * Redistributions of source code must retain the above copyright
+;;;     notice, this list of conditions and the following disclaimer.
+;;;
+;;;   * Redistributions in binary form must reproduce the above
+;;;     copyright notice, this list of conditions and the following
+;;;     disclaimer in the documentation and/or other materials
+;;;     provided with the distribution.
+;;;
+;;; THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+;;; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+;;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+;;; ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+;;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+;;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+;;; GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+;;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 (defpackage :cxml-stp-test
   (:use :cl :rt :stp))
 
@@ -22,10 +51,6 @@
 			  "/home/david/2001/XML-Test-Suite/xmlconf/"))
 
 
-(deftest text.constructor
-    (data (make-text "test"))
-  "test")
-
 (defun assert-equal (a b)
   (unless (equal a b)
     (error "assertion failed: ~S and ~S are not EQUAL" a b)))
@@ -37,11 +62,25 @@
 	 (error "expected a condition of type ~A" ',type))
      (,type ())))
 
+(defun serialize-to-string (node)
+  (let ((sink (cxml:make-string-sink)))
+    (serialize node sink)
+    (sax:end-document sink)))
+
 (defmacro define-exception-test (name form type)
   `(deftest ,name
        (progn
 	 (expect-exception ,form ,type)
 	 (values))))
+
+(rem-all-tests)
+
+
+;;;; TEXT
+
+(deftest text.constructor
+    (data (make-text "test"))
+  "test")
 
 (deftest text.legal
     (let ((text (make-text "name")))
@@ -102,14 +141,13 @@
 				 pairs)
 	 do
 	   (setf (data text) in)
-	   (let ((sink (cxml:make-string-sink)))
-	     (serialize text sink)
-	     (assert-equal (sax:end-document sink) out)))
+	   (assert-equal (serialize-to-string text) out))
       (values)))
 
 (deftest text.copy
     (let* ((c1 (make-text "test"))
 	   (c2 (copy c1)))
+      (assert (not (eq c1 c2)))
       (assert-equal (data c1) (data c2))
       (assert-equal nil (parent c2))
       (assert-equal (type-of c2) 'text)
@@ -135,5 +173,79 @@
 	(delete-child c1 e)
 	(assert-equal 0 (count-children-if #'identity e)))
       (values)))
+
+
+;;;; COMMENT
+
+(deftest comment.constructor
+    (data (make-comment "test"))
+  "test")
+
+(deftest comment.constructor2
+    (data (make-comment ""))
+  "")
+
+(deftest comment.copy
+    (let* ((c1 (make-comment "test"))
+	   (c2 (copy c1)))
+      (assert (not (eq c1 c2)))
+      (assert-equal (data c1) (data c2))
+      (assert-equal nil (parent c2))
+      (assert-equal (type-of c2) 'comment)
+      (values)))
+
+(deftest comment.serialize
+    (let ((c (make-comment "0123456789012345678901234567890123456789")))
+      (assert-equal (serialize-to-string c)
+		    "<!--0123456789012345678901234567890123456789-->")
+      (values)))
+
+;;; zzz das pruefen wir nicht
+;; (define-exception-test comment.cr
+;;     (make-comment (format nil "foo ~C bar" (code-char 13)))
+;;   stp-error)
+
+(deftest comment.setf
+    (let ((c (make-comment "test")))
+      (setf (data c) "legal")
+      (assert-equal (data c) "legal")
+      (assert-equal (string-value c) "legal")
+      (expect-exception (setf (data c) "test -- test") stp-error)
+      (expect-exception (setf (data c) "test-") stp-error)
+      (setf (data c) nil)
+      (assert-equal (data c) "")
+      (values)))
+
+;;; zzz
+;;;   - testSurrogates
+
+(deftest comment.leaf-node
+    (let ((c1 (make-comment "data")))
+      (assert-equal 0 (count-children-if #'identity c1))
+      (expect-exception (nth-child 0 c1) error)
+      (assert-equal nil (parent c1))
+      (let ((e (make-element "test")))
+	(append-child e c1)
+	(assert-equal e (parent c1))
+	(assert-equal c1 (nth-child 0 e))
+	(delete-child c1 e)
+	(assert-equal 0 (count-children-if #'identity e)))
+      (values)))
+
+(deftest comment.document
+    (let ((c1 (make-comment "data"))
+	  (root (make-element "root")))
+      (assert-equal nil (document c1))
+      (append-child root c1)
+      (assert-equal nil (document c1))
+      (let ((document (make-document root)))
+	(assert-equal document (document c1)))
+      (values)))
+
+(deftest comment.funny-characters-allowed
+    (assert-equal (serialize-to-string (make-comment "<test>&amp;&greater;"))
+		  "<!--<test>&amp;&greater;-->")
+  nil)
+
 
 (do-tests)
