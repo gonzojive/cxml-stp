@@ -1,7 +1,7 @@
 ;;; -*- show-trailing-whitespace: t; indent-tabs: nil -*-
 
 ;;; Copyright (c) 2007 David Lichteblau. All rights reserved.
-;;; (but mostly transcribed from nu/xom/tests/*)
+;;; (mostly transcribed from nu/xom/tests/*)
 
 ;;; Redistribution and use in source and binary forms, with or without
 ;;; modification, are permitted provided that the following conditions
@@ -54,11 +54,14 @@
   (unless (equal a b)
     (error "assertion failed: ~S and ~S are not EQUAL" a b)))
 
-(defmacro expect-condition (form type)
+(defmacro expect-condition (form type &optional data)
   `(handler-case
        (progn
 	 ,form
-	 (error "expected a condition of type ~A" ',type))
+	 (error "expected a condition of type ~A in:~%~A~@[~%for value ~A~]"
+		',type
+		',form
+		,data))
      (,type ())))
 
 (defun serialize-to-string (node)
@@ -66,7 +69,7 @@
     (serialize node sink)
     (sax:end-document sink)))
 
-(defmacro define-exception-test (name form type)
+(defmacro define-condition-test (name form type)
   `(deftest ,name
        (progn
 	 (expect-condition ,form ,type)
@@ -113,7 +116,7 @@
       (data text))
   "")
 
-(define-exception-test text.illegal
+(define-condition-test text.illegal
     (let ((text (make-text "name")))
       (setf (data text) (format nil "test ~C test" (code-char 0))))
   stp-error)
@@ -204,7 +207,7 @@
       (values)))
 
 ;;; zzz das pruefen wir nicht
-;; (define-exception-test comment.cr
+;; (define-condition-test comment.cr
 ;;     (make-comment (format nil "foo ~C bar" (code-char 13)))
 ;;   stp-error)
 
@@ -251,7 +254,7 @@
 		  "<!--<test>&amp;&greater;-->")
   nil)
 
-(define-exception-test comment.only-char-allowed
+(define-condition-test comment.only-char-allowed
     (make-comment (format nil " ~C " (code-char 1)))
   stp-error)
 
@@ -347,7 +350,7 @@
       (values)))
 
 ;;; zzz das pruefen wir nicht
-;; (define-exception-test pi.cr
+;; (define-condition-test pi.cr
 ;;     (make-processing-instruction "target" (format nil "foo ~C bar" (code-char 13)))
 ;;   stp-error)
 
@@ -369,5 +372,237 @@
 	     (values))
       (expect-condition (make-processing-instruction str "data") stp-error)))
 
+
+;;;; DOCUMENT-TYPE
+
+(defparameter +name+ "Ottokar")
+(defparameter +sysid+ "http://www.w3.org/TR/some.dtd")
+(defparameter +pubid+ "-//Me//some public ID")
+
+(deftest doctype.constructor.1
+    (let ((doctype (make-document-type +name+ +sysid+ +pubid+)))
+      (assert-equal (root-element-name doctype) +name+)
+      (assert-equal (system-id doctype) +sysid+)
+      (assert-equal (public-id doctype) +pubid+)
+      (values)))
+
+(deftest doctype.constructor.2
+    (let ((doctype (make-document-type +name+ +sysid+)))
+      (assert-equal (root-element-name doctype) +name+)
+      (assert-equal (system-id doctype) +sysid+)
+      (assert-equal (public-id doctype) nil)
+      (values)))
+
+(deftest doctype.constructor.3
+    (let ((doctype (make-document-type +name+)))
+      (assert-equal (root-element-name doctype) +name+)
+      (assert-equal (system-id doctype) nil)
+      (assert-equal (public-id doctype) nil)
+      (values)))
+
+(deftest doctype.constructor.3
+    (let ((doctype (make-document-type "try:name")))
+      (assert-equal (root-element-name doctype) "try:name")
+      (assert-equal (system-id doctype) nil)
+      (assert-equal (public-id doctype) nil)
+      (values)))
+
+(define-condition-test doctype.constructor.4
+    (make-document-type "try name")
+  stp-error)
+
+(define-condition-test doctype.constructor.5
+    (make-document-type nil)
+  error)
+
+(define-condition-test doctype.constructor.6
+    (make-document-type "")
+  error)
+
+(define-condition-test doctype.constructor.7
+    (make-document-type ":try")
+  stp-error)
+
+(deftest doctype.serialize.1
+    (let ((name "Ottokar")
+	  (sysid "http://www.w3.org/TR/some.dtd")
+	  (pubid "-//Me//some public ID"))
+      (assert-equal (serialize-to-string (make-document-type name sysid pubid))
+		    (format nil "<!DOCTYPE ~A PUBLIC \"~A\" \"~A\">~%"
+			    name pubid sysid))
+      (assert-equal (serialize-to-string (make-document-type name sysid))
+		    (format nil "<!DOCTYPE ~A SYSTEM \"~A\">~%" name sysid))
+      (assert-equal (serialize-to-string (make-document-type name))
+		    (format nil "<!DOCTYPE ~A>~%" name))
+      (values)))
+
+(deftest doctype.serialize.2
+    (let* ((str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE test [
+<!ELEMENT test #PCDATA>
+]>
+<test/>")
+	   (d (cxml:parse str (make-builder) :validate t)))
+      (assert-equal (serialize-to-string d) str)
+      (values)))
+
+(deftest doctype.serialize.3
+    (let* ((subset "  <!--comment-->
+  <!ELEMENT test #PCDATA>
+  <!--comment-->
+")
+	   (expected
+	    (format nil
+		    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE test [
+~A]>
+<test/>"
+		    subset))
+	   (test (make-element "test"))
+	   (d (make-document test))
+	   (doctype (make-document-type "test")))
+      (prepend-child d doctype)
+      (setf (internal-subset doctype) subset)
+      (assert-equal (serialize-to-string d) expected)
+      (values)))
+
+(deftest doctype.setf
+    (let ((doctype (make-document-type "root")))
+      (setf (root-element-name doctype) "newval")
+      (assert-equal (root-element-name doctype) "newval")
+      (setf (root-element-name doctype) "new:val")
+      (assert-equal (root-element-name doctype) "new:val")
+      (expect-condition (setf (root-element-name doctype) ":newval")
+			stp-error)
+      (expect-condition (setf (root-element-name doctype) "new val")
+			stp-error)
+      (values)))
+
+(deftest doctype.setf.internal-subset.1
+    (let ((doctype (make-document-type "root")))
+      (setf (internal-subset doctype) "")
+      (assert-equal (internal-subset doctype) "")
+      (values)))
+
+(deftest doctype.setf.internal-subset.2
+    (let ((doctype (make-document-type "root")))
+      (setf (internal-subset doctype) nil)
+      (assert-equal (internal-subset doctype) "")
+      (values)))
+
+(deftest doctype.setf.internal-subset.3
+    (let ((doctype (make-document-type "root")))
+      (setf (internal-subset doctype) #1="<!ELEMENT test (PCDATA)>")
+      (internal-subset doctype))
+  #1#)
+
+;;; FIXME: sollen wir das nun pruefen oder nicht?
+;; (deftest doctype.setf.internal-subset.4
+;;     (let ((doctype (make-document-type "root")))
+;;       (setf (internal-subset doctype)
+;; 	    #1="<!ENTITY % test SYSTEM 'http://www.example.com/notexists.dtd'>
+;; %test;\n")
+;;       (internal-subset doctype))
+;;   #1#)
+
+(define-condition-test doctype.setf.internal-subset.5
+    (let ((doctype (make-document-type "root")))
+      (setf (internal-subset doctype) "<!ELEMENT test (PCDATA>"))
+  stp-error)
+
+(deftest doctype.leaf-node
+    (list-children (make-document-type "root"))
+  nil)
+
+(deftest doctype.pubid
+    (labels ((legal (pubid)
+	       (let ((pubid
+		      (etypecase pubid
+			(string pubid)
+			(integer (string (code-char pubid)))
+			(character (string pubid)))))
+		 (assert-equal
+		  (public-id (make-document-type
+			      "name"
+			      "http://www.w3.org/TR/some.dtd"
+			      pubid))
+		  pubid)))
+	     (illegal (pubid)
+	       (expect-condition (legal pubid) stp-error pubid)))
+      (loop for i from 0 to 9 do (illegal i))
+      (illegal 11)
+      (illegal 12)
+      (loop for i from 14 below 32 do (illegal i))
+      (loop for i from 126 below 1000 do (illegal i))
+      (map nil #'illegal "<>`^&\"[]{}|\\~")
+      (map nil #'legal "-'()+,./:=?;!*#@$_%")
+      (loop for i from (char-code #\a) to (char-code #\z) do (legal i))
+      (loop for i from (char-code #\A) to (char-code #\Z) do (legal i))
+      (loop for i from (char-code #\0) to (char-code #\9) do (legal i))
+      (legal "foo bar")
+      #+(or)
+      (progn				;sehe ich nicht ein
+	(illegal " foo")
+	(illegal "foo ")
+	(illegal "foo  bar")
+	(illegal (format nil "foo~Cbar" (code-char 10)))
+	(illegal (format nil "foo~Cbar" (code-char 13)))))
+  nil)
+
+(deftest doctype.sysid
+    (labels ((legal (sysid)
+	       (let ((sysid
+		      (etypecase sysid
+			(string sysid)
+			(integer (string (code-char sysid)))
+			(character (string sysid)))))
+		 (assert-equal
+		  (system-id (make-document-type
+			      "name"
+			      sysid))
+		  sysid)))
+	     (illegal (sysid)
+	       (expect-condition (legal sysid) stp-error sysid)))
+      (legal "http://www.example.com/test$red/limit,data.xml")
+      (legal "smb://domain;user:pass@server/share/path/to/file")
+      (illegal "http://www.example.com/index.html#test")
+      (illegal "http://www.example.com/index.html#")
+      (illegal #xa9)
+      (illegal #xc0)
+      (illegal "both \" and '"))
+  nil)
+
+(deftest doctype.copy
+    (let* ((name "Ottokar")
+	   (sysid "http://www.w3.org/TR/some.dtd")
+	   (pubid "-//Me//some public ID")
+	   (c1 (make-document-type name sysid pubid))
+	   (c2 (copy c1)))
+      (assert-equal (root-element-name c1) (root-element-name c2))
+      (assert-equal (public-id c1) (public-id c2))
+      (assert-equal (system-id c1) (system-id c2))
+      (assert-equal (internal-subset c1) (internal-subset c2))
+      (assert (not (eq c1 c2)))
+      (values)))
+
+(define-condition-test doctype.pubid-needs-sysid
+    (setf (public-id (make-document-type "Ottokar")) "-//Me//some public ID")
+  stp-error)
+
+(deftest doctype.remove
+    (let* ((name "Ottokar")
+	   (sysid "http://www.w3.org/TR/some.dtd")
+	   (pubid "-//Me//some public ID")
+	   (doctype (make-document-type name sysid pubid)))
+      (setf (public-id doctype) nil)
+      (assert-equal nil (public-id doctype))
+      (setf (public-id doctype) pubid)
+      (assert-equal pubid (public-id doctype))
+      (expect-condition (setf (system-id doctype) nil) stp-error)
+      (setf (public-id doctype) nil)
+      (assert-equal nil (public-id doctype))
+      (setf (system-id doctype) nil)
+      (assert-equal nil (system-id doctype))
+      (values)))
 
 (do-tests)

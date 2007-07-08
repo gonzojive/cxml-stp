@@ -123,9 +123,14 @@
 
 (defmethod (setf root-element-name) :before (newval (node document-type))
   (unless (zerop (length newval))
-    (check-xml-name newval)))
+    (check-xml-name newval)
+    (handler-case
+	(cxml::split-qname newval)
+      (cxml:well-formedness-violation ()
+	(stp-error "not a QName: ~A" newval)))))
 
-(defmethod (setf internal-subset) :before (newval (node document-type))
+(defmethod (setf internal-subset) :around (newval (node document-type))
+  (setf newval (or newval ""))
   (unless (zerop (length newval))
     (handler-case
 	(cxml:parse-rod
@@ -134,9 +139,10 @@
       (cxml:well-formedness-violation (c)
 	(stp-error "attempt to set internal subset to a value that is not ~
                     well-formed: ~A"
-		   c)))))
+		   c))))
+  (call-next-method newval node))
 
-(defmethod (setf public-id) :before (newval (node document-type))
+(defmethod (setf public-id) :around (newval (node document-type))
   (when (equal newval "")
     (setf newval nil))
   (when (and newval (null (system-id node)))
@@ -144,13 +150,21 @@
   ;; zzz hier muss mehr geprueft werden?
   ;; was ist mit ' und " gleichzeitig?
   (unless (every #'cxml::pubid-char-p newval)
-    (stp-error "malformed public id: ~S" newval)))
+    (stp-error "malformed public id: ~S" newval))
+  (call-next-method newval node))
 
-(defmethod (setf system-id) :before (newval (node document-type))
+(defmethod (setf system-id) :around (newval (node document-type))
   (when (equal newval "")
     (setf newval nil))
   (when (and (public-id node) (null newval))
-    (stp-error "attempt to remove system-id, but public-id is set")))
+    (stp-error "attempt to remove system-id, but public-id is set"))
+  (when (position #\# newval)
+    (stp-error "attempt to use a system id with a fragment identifier"))
+  (when (some (lambda (c) (> (char-code c) 126)) newval)
+    (stp-error "non-ASCII characters in system id"))
+  (when (and (position #\" newval) (position #\' newval))
+    (stp-error "system id contains both single and double quote"))
+  (call-next-method newval node))
 
 (defmethod string-value ((node document-type))
   "")

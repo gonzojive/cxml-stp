@@ -66,7 +66,7 @@
   (typecase child
     ((or comment processing-instruction))
     (document-type
-     (when (document-type parent)
+     (when (stp:document-type parent)
        (stp-error "attempt to insert multiple document types"))
      (let ((j (child-position-if (alexandria:of-type 'element) parent)))
        (unless (<= i j)

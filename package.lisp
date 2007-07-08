@@ -87,6 +87,7 @@
 
 	   #:document-type
 	   #:make-document-type
+	   #:root-element-name
 	   #:system-id
 	   #:public-id
 	   #:internal-subset
