@@ -185,6 +185,10 @@
     (data (make-comment ""))
   "")
 
+(deftest comment.constructor3
+    (data (make-comment "- - "))
+  "- - ")
+
 (deftest comment.copy
     (let* ((c1 (make-comment "test"))
 	   (c2 (copy c1)))
@@ -218,6 +222,7 @@
 
 ;;; zzz
 ;;;   - testSurrogates
+;;;   - testForbidUnmatchedSurrogatesInComments
 
 (deftest comment.leaf-node
     (let ((c1 (make-comment "data")))
@@ -246,6 +251,10 @@
     (assert-equal (serialize-to-string (make-comment "<test>&amp;&greater;"))
 		  "<!--<test>&amp;&greater;-->")
   nil)
+
+(define-exception-test comment.only-char-allowed
+    (make-comment (format nil " ~C " (code-char 1)))
+  stp-error)
 
 
 (do-tests)
