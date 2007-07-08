@@ -80,6 +80,7 @@
   (value node))
 
 (defun xml-characters-p (str)
+  (declare (optimize speed (safety 0)))
   (every (lambda (c)
 	   (let ((code (char-code c)))
 	     (or (eql code 9)
@@ -94,7 +95,7 @@
 		 ;;
 		 (<= #xe000 code #xfffd)
 		 (<= #x10000 code #x10ffff))))
-	 str))
+	 (the string str)))
 
 (defmethod (setf value) :before (newval (node attribute))
   (unless (xml-characters-p newval)
