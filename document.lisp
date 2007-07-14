@@ -84,8 +84,6 @@
   (stp-error "attempt to remove document element"))
 
 (defmethod check-replacement-allowed ((parent document) children)
-  (unless children
-    (stp-error "attempt to remove document element"))
   (let ((dt nil)
 	(de nil))
     (loop
@@ -104,6 +102,8 @@
 	    (setf dt i))
 	   (t
 	    (stp-error "not a valid child of a document: ~A" c))))
+    (unless de
+      (stp-error "attempt to remove document element"))
     (when (and dt (> dt de))
       (stp-error "attempt to insert document type after document element"))))
 
@@ -117,7 +117,7 @@
 ;; zzz gefaellt mir nicht
 (defun (setf cxml-stp:document-type) (newval document)
   (check-type newval document-type)
-  (let ((old (document-type document)))
+  (let ((old (cxml-stp:document-type document)))
     (unless (eq newval old)
       (assert-orphan newval)
       (if old

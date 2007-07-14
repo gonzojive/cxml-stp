@@ -605,4 +605,148 @@
       (assert-equal nil (system-id doctype))
       (values)))
 
+
+;;;; DOCUMENT
+
+(deftest document.insertion
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (doctype (make-document-type "root")))
+      (expect-condition (insert-child document doctype 1) stp-error)
+      (insert-child document doctype 0)
+      (assert-equal (document-type document) doctype)
+      (let ((doctype2 (make-document-type "test")))
+	(expect-condition (insert-child document doctype2 1) stp-error)
+	(assert-equal (document-type document) doctype)
+	(assert-equal (first-child document) doctype)
+	(assert-equal nil (parent doctype2))
+	;; install doctype2
+	(setf (document-type document) doctype2)
+	(assert-equal (document-type document) doctype2)
+	(assert-equal (first-child document) doctype2)
+	(assert-equal nil (parent doctype))
+	;; once again, noop
+	(setf (document-type document) doctype2)
+	(assert-equal (document-type document) doctype2)
+	(assert-equal (first-child document) doctype2)
+	(assert-equal nil (parent doctype))
+	;; nil not allowed
+	(expect-condition (setf (document-type document) nil) type-error)
+	(assert-equal (document-type document) doctype2)
+	;; two parents not allowed
+	(let ((document2 (make-document (make-element "root"))))
+	  (expect-condition (setf (document-type document2) doctype2)
+			    stp-error)
+	  (assert-equal (parent doctype2) document)))
+      (values)))
+
+(deftest document.base-uri
+    (let* ((root (make-element "root"))
+	   (document (make-document root)))
+      (assert-equal (base-uri document) "")
+      (dolist (url '("http://www.example.com/index.xml"
+		     "http://www.example.com/index.xml"
+		     "file:///home/elharo/XO%4D/data/test.xml"))
+	(setf (base-uri document) url)
+	(assert-equal (base-uri document) url))
+      (values)))
+
+(define-condition-test document.second-root
+    (let* ((root (make-element "root"))
+	   (document (make-document root)))
+      (insert-child document (make-element "root2") 0))
+  stp-error)
+
+(deftest document.setf.document-element
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (new-root (make-element "new-root")))
+      ;; change
+      (setf (document-element document) new-root)
+      (assert-equal (document-element document) new-root)
+      (assert-equal nil (parent root))
+      (expect-condition (setf (document-element document) nil) type-error)
+      ;; no multiple parents
+      (let ((top (make-element "top"))
+	    (child (make-element "child")))
+	(append-child top child)
+	(expect-condition (setf (document-element document) child) stp-error))
+      ;; once again, noop
+      (setf (document-element document) new-root)
+      (assert-equal (document-element document) new-root)
+      (assert-equal nil (parent root))
+      (values)))
+
+;; like document.setf.document-element, but using replace-child instead
+(deftest document.setf.replace-child
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (new-root (make-element "new-root")))
+      ;; change
+      (replace-child document new-root root)
+      (assert-equal (document-element document) new-root)
+      (assert-equal nil (parent root))
+      (expect-condition (setf (document-element document) nil) type-error)
+      ;; no multiple parents
+      (let ((top (make-element "top"))
+	    (child (make-element "child")))
+	(append-child top child)
+	(expect-condition (replace-child document child new-root) stp-error))
+      ;; once again, noop
+      (replace-child document new-root new-root)
+      (assert-equal (document-element document) new-root)
+      (assert-equal nil (parent root))
+      (values)))
+
+(deftest document.insertion-allowed
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (original (make-comment "original"))
+	   (c2 (make-comment "new comment"))
+	   (temp (make-element "temp")))
+      (prepend-child document original)
+      (append-child temp c2)
+      (expect-condition (replace-child document original c2) stp-error)
+      (assert-equal (list-children document) (list original root))
+      (values)))
+
+(deftest document.replace-doctype.1
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (new (make-document-type "new"))
+	   (old (make-document-type "old")))
+      (setf (document-type document) old)
+      (replace-child document new old)
+      (assert-equal new (document-type document))
+      (assert-equal nil (parent old))
+      (assert-equal document (parent new))
+      (values)))
+
+(deftest document.replace-doctype.2
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (new (make-document-type "new"))
+	   (old (make-document-type "old"))
+	   (temp (make-document (make-element "root"))))
+      (setf (document-type temp) new)
+      (setf (document-type document) old)
+      (expect-condition (setf (document-type document) new) stp-error)
+      (assert-equal old (document-type document))
+      (assert-equal document (parent old))
+      (assert-equal new (document-type temp))
+      (assert-equal temp (parent new))
+      (values)))
+
+;; testReplaceRootElementWithComment
+(deftest document.replacement-allowed.1
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (comment (make-comment "c")))
+      (expect-condition (replace-child document comment root) stp-error)
+      (assert-equal root (document-element document))
+      (assert-equal document (parent root))
+      (assert-equal nil (parent comment))
+      (values)))
+
+
 (do-tests)

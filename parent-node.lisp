@@ -52,6 +52,10 @@
     (warn "base URI does not look like an absolute URL: ~S" newval))
   (setf (slot-value node '%base-uri) (or newval "")))
 
+(defun maybe-fill-in-base-uri (removed-child)
+  (when (typep removed-child 'element)
+    (fill-in-base-uri removed-child)))
+
 (defun fill-in-base-uri (removed-child)
   (setf (%base-uri removed-child)
 	(find-base-uri removed-child)))
@@ -59,7 +63,7 @@
 (defun find-base-uri (node)
   (loop
      for n = node then parent
-     for parent = (parent node)
+     for parent = (parent n)
      for uri = (%base-uri n)
      while (and (equal uri "") parent)
      finally (return uri)))
@@ -230,8 +234,7 @@
 (defun %nuke-nth-child (parent i)
   (let* ((c (%children parent))
 	 (loser (elt c i)))
-    (when (typep loser 'element)
-      (fill-in-base-uri loser))
+    (maybe-fill-in-base-uri loser)
     (cxml-dom::move c c (1+ i) i (- (length c) i 1))
     (decf (fill-pointer c))
     (setf (%parent loser) nil)))
@@ -255,8 +258,7 @@
 	      (let ((loser (elt c i)))
 		(when (funcall predicate (funcall key loser))
 		  (check-deletion-allowed parent loser i)
-		  (when (typep loser 'element)
-		    (fill-in-base-uri loser))
+		  (maybe-fill-in-base-uri loser)
 		  (cxml-dom::move c c (1+ i) i (- (length c) i 1))
 		  (decf (fill-pointer c))
 		  (setf (%parent loser) nil)
@@ -270,8 +272,7 @@
 		(cond
 		  ((funcall predicate (funcall key loser))
 		   (check-deletion-allowed parent loser i)
-		   (when (typep loser 'element)
-		     (fill-in-base-uri loser))
+		   (maybe-fill-in-base-uri loser)
 		   (cxml-dom::move c c (1+ i) i (- (length c) i 1))
 		   (decf (fill-pointer c))
 		   (setf (%parent loser) nil)
@@ -294,17 +295,27 @@
 		 (<= end1 (length old))
 		 (<= start1 end1))
       (error "invalid bounding index designators"))
-    (let ((new (if old
-		   (replace (alexandria:copy-array old)
-			    seq
-			    :start1 start1
-			    :end1 end1
-			    :start2 start2
-			    :end2 end2)
-		   (make-array (length seq)
-			       :fill-pointer (length seq)
-			       :adjustable t
-			       :initial-contents seq))))
+    (let* ((new (if old
+		    (replace (alexandria:copy-array old)
+			     seq
+			     :start1 start1
+			     :end1 end1
+			     :start2 start2
+			     :end2 end2)
+		    (make-array (length seq)
+				:fill-pointer (length seq)
+				:adjustable t
+				:initial-contents seq)))
+	   (new-list (coerce new 'list)))
+      (unless (equal new-list (remove-duplicates new-list))
+	(stp-error "duplicate children after replacement"))
+      (loop
+	 for i from start2 below end2
+	 for winner = (elt seq i)
+	 for p = (parent winner)
+	 do
+	   (when (and p (not (eq p parent)))
+	     (stp-error "node already has a parent: ~A" winner)))
       (check-replacement-allowed parent new)
       (setf (%children parent) new)
       (loop
@@ -312,14 +323,13 @@
 	 for loser = (elt old i)
 	 do
 	 (unless (find loser seq :start start2 :end end2)
-	   (fill-in-base-uri loser)
+	   (maybe-fill-in-base-uri loser)
 	   (setf (%parent loser) nil)))
       (loop
 	 for i from start2 below end2
 	 for winner = (elt seq i)
 	 do
-	 (unless (find winner old :start start1 :end end1)
-	   (setf (%parent winner) parent)))))
+	   (setf (%parent winner) parent))))
   t)
 
 (defreader parent-node ((base-uri "") (children nil))

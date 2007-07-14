@@ -33,10 +33,15 @@
 
 (defun make-builder ()
   "@return{STP builder, a SAX handler}
-   @short{This function creates SAX that constructs an STP document.}
+   @short{This function creates SAX handler that constructs an STP document.}
 
    The builder processes SAX events and can be used with any
    function generating such events, in particular with cxml:parse-file.
+
+   Examples. Parsing a file:
+   @begin{pre}(cxml:parse #p\"example.xml\" (stp:make-builder))@end{pre}
+   Parsing a string:
+   @begin{pre}(cxml:parse \"<example/>\" (stp:make-builder))@end{pre}
 
    @see{serialize}"
   (make-instance 'builder))

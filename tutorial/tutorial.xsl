@@ -31,7 +31,7 @@
 		</td>
 		<td>
 		  <xsl:text>&#160;&#160;</xsl:text>
-		  <a class="em"
+		  <a class="blue"
 		     href="pages/{position()}.html">
 		    <xsl:value-of select="@title"/>
 		  </a>

@@ -174,9 +174,6 @@
     @aboutfun{parent}
     If a node has a @class{document} as its ancestor, it can be found using
     the @fun{document} function.
-    (Detached nodes do not belong to a document -- except for document nodes
-    themselves, of course.  Once detached, they can be added to a different
-    documents.)
 
     @aboutfun{document}
     Since the @code{parent} slot needs to be updated when children are added or

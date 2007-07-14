@@ -131,8 +131,8 @@
     child nodes and attributes are copied in the same way.
 
     Shared structure includes only primitive slot values like strings.
-    The consequences are undefined if user code mutates such values, whether
-    @code{copy} is used or not."))
+    (The consequences are undefined if user code mutates such values, whether
+    @code{copy} is used or not.)"))
 
 (defgeneric serialize (node handler)
   (:documentation
@@ -142,7 +142,21 @@
     Use this function together with a serialization sink to generate
     a serialized XML document.
 
-    @see{make-builder}"))
+    Examples. Serializing to a stream:
+    @begin{pre}CL-USER> (stp:serialize (stp:make-document (stp:make-element \"test\"))
+			(cxml:make-character-stream-sink *standard-output*))
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<test/>
+#<SWANK-BACKEND::SLIME-OUTPUT-STREAM {10037EA611@}>
+@end{pre}
+    Examples. Serializing to a string:
+    @begin{pre}CL-USER> (stp:serialize (stp:make-document (stp:make-element \"test\"))
+			(cxml:make-string-sink))
+\"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>
+<test/>\"
+@end{pre}
+
+   @see{make-builder}"))
 
 ;;; CHILDREN-related convenience functions
 

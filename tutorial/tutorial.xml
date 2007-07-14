@@ -66,7 +66,7 @@
 
   <page title="Node"
 	description="The superclass">
-    All nodes have a parent (can be nil)
+    All nodes have a parent slot (can be nil)
     <code>(defclass <b>node</b> ()
   ((parent :reader <b>parent</b>)))</code>
     <br/>
@@ -151,8 +151,8 @@
   <page title="Elements">
     Four names for the price of three:
     <code>(defclass <b>element</b> (parent-node)
-  ((local-name :accessor <b>local-name</b>)
-   (prefix :accessor <b>namespace-prefix</b>)
+  ((local-name    :accessor <b>local-name</b>)
+   (prefix        :accessor <b>namespace-prefix</b>)
    (namespace-uri :accessor <b>namespace-uri</b>)))
 
 (defun <b>qualified-name</b> (node) ...)</code>
@@ -190,10 +190,10 @@
   <page title="Attributes">
     Leaf node with name and value.
     <code>(defclass <b>attribute</b> (node)
-  ((<b>local-name</b> :accessor local-name)
-   (<b>prefix</b> :reader namespace-prefix)
+  ((<b>local-name</b>    :accessor local-name)
+   (<b>prefix</b>        :reader namespace-prefix)
    (<b>namespace-uri</b> :reader namespace-uri)
-   (<b>value</b> :accessor value)))
+   (<b>value</b>         :accessor value)))
 
 (defun <b>rename-attribute</b> (attribute prefix uri) ...)</code>
     <br/>
@@ -349,7 +349,7 @@
     </ul>
   </page>
 
-  <page title="Easy classes"
+  <page title="Easy Classes"
 	description="comment, text, processing-instruction">
     Text nodes are the <i>chit-chat</i> in <tt>&lt;p>chit-chat&lt;/p></tt>.
     <example title="Text nodes">
@@ -375,9 +375,9 @@
     Optional child of <tt>document</tt>.
     <code>(defclass <b>document-type</b> (leaf-node)
   ((<b>root-element-name</b> :accessor root-element-name)
-   (<b>system-id</b> :accessor system-id)
-   (<b>public-id</b> :accessor public-id)
-   (<b>internal-subset</b> :accessor internal-subset)))</code>
+   (<b>system-id</b>         :accessor system-id)
+   (<b>public-id</b>         :accessor public-id)
+   (<b>internal-subset</b>   :accessor internal-subset)))</code>
     <br/>
     Records what DTD the document <i>claims</i> to be following.<br/>
     <ul>
@@ -392,6 +392,7 @@
 
   <page title="MORE STRICTNESS"
 	description="Other well-formedness checks">
+    Some examples for well-formedness checks:
     <example title="Not all strings are allowed as comments">
       <repl>CL-USER> (stp:make-comment "verboten: --")</repl>
       <result>Error: forbidden -- in comment</result>
@@ -408,6 +409,26 @@
       <repl>CL-USER> (stp:make-processing-instruction "xml" "version='1.0'")</repl>
       <result>Error: attempt to pretend that a PI is an XMLDecl</result>
     </example>
+  </page>
+
+  <page title="Printed representation">
+    Structure-like output for copy&amp;paste in the REPL
+    <repl>CL-USER> (stp:make-document (stp:make-element "list"))</repl>
+    <result>#.(STP:DOCUMENT
+   :CHILDREN '(#.(STP:ELEMENT
+                  #| :PARENT of type DOCUMENT |#
+                  :LOCAL-NAME "list")))</result>
+    <ul>
+      <li>Uses #. to avoid changing the global readtable</li>
+      <li>
+	Private constructor functions for debugging purposes only.  In
+	source code, use the documented <tt>make-</tt><i>foo</i>
+	functions instead.
+      </li>
+      <li>
+	Syntax subject to change without notice
+      </li>
+    </ul>
   </page>
 
   <page title="STP for Closure XML">
