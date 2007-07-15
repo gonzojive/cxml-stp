@@ -91,7 +91,7 @@
     (setf (%namespaces result)
 	  (when (%namespaces node)
 	    (alexandria:copy-hash-table (%namespaces node))))
-    (setf (%attributes result) (copy-attributes node))
+    (setf (%attributes result) (copy-attributes result node))
     (setf (%base-uri result) (find-base-uri node))
     (do-children (child node)
       (append-child result (copy child)))

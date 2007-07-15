@@ -400,7 +400,7 @@
       (assert-equal (public-id doctype) nil)
       (values)))
 
-(deftest doctype.constructor.3
+(deftest doctype.constructor.3a
     (let ((doctype (make-document-type "try:name")))
       (assert-equal (root-element-name doctype) "try:name")
       (assert-equal (system-id doctype) nil)
@@ -423,6 +423,41 @@
     (make-document-type ":try")
   stp-error)
 
+(deftest doctype.constructor.8
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (new-root (make-element "new-root")))
+      (assert-equal root (document-element document))
+      (assert-equal 1 (count-children-if #'identity document))
+      ;; change root
+      (setf (document-element document) new-root)
+      (assert-equal new-root (document-element document))
+      (assert-equal 1 (count-children-if #'identity document))
+      ;; append comment
+      (append-child document (make-comment "test"))
+      (assert-equal 2 (count-children-if #'identity document))
+      ;; prepend comment
+      (prepend-child document (make-comment "prolog comment"))
+      (assert-equal 3 (count-children-if #'identity document))
+      (check-type (nth-child 0 document) comment)
+      (check-type (nth-child 1 document) element)
+      (check-type (nth-child 2 document) comment)
+      ;; insert PI
+      (insert-child document (make-processing-instruction "t" "d") 1)
+      (check-type (nth-child 0 document) comment)
+      (check-type (nth-child 1 document) processing-instruction)
+      (check-type (nth-child 2 document) element)
+      (check-type (nth-child 3 document) comment)
+      ;; insert PI
+      (insert-child document (make-processing-instruction "epilog" "d") 3)
+      (check-type (nth-child 0 document) comment)
+      (check-type (nth-child 1 document) processing-instruction)
+      (check-type (nth-child 2 document) element)
+      (check-type (nth-child 3 document) processing-instruction)
+      (check-type (nth-child 4 document) comment)
+      ;; null root
+      (expect-condition (make-document nil) type-error)
+      (values)))
 (deftest doctype.serialize.1
     (let ((name "Ottokar")
 	  (sysid "http://www.w3.org/TR/some.dtd")
@@ -747,6 +782,102 @@
       (assert-equal document (parent root))
       (assert-equal nil (parent comment))
       (values)))
+
+(deftest document.replacement-allowed.2
+    (let* ((document (make-document (make-element "root")))
+	   (comment (make-comment "not a doctype"))
+	   (doctype (make-document-type "new")))
+      (prepend-child document comment)
+      (replace-child document doctype comment)
+      (assert-equal doctype (document-type document))
+      (assert-equal document (parent doctype))
+      (assert-equal nil (parent comment))
+      (values)))
+
+(deftest document.detach
+    (let* ((document (make-document (make-element "root")))
+	   (comment (make-comment "c")))
+      (append-child document comment)
+      (assert-equal document (parent comment))
+      (detach comment)
+      (assert-equal nil (parent comment))
+      (values)))
+
+(deftest document.document
+    (let ((document (make-document (make-element "root"))))
+      (assert-equal document (document document))
+      (values)))
+
+(deftest document.copy
+    (let* ((root (make-element "root"))
+	   (document (make-document root)))
+      (prepend-child document (make-comment "text"))
+      (insert-child document (make-processing-instruction "text" "data") 1)
+      (insert-child document (make-document-type "text") 2)
+      (append-child root (make-comment "after"))
+      (append-child document (make-processing-instruction "text" "after"))
+      (labels ((recurse (a b)
+		 (assert-equal (type-of a) (type-of b))
+		 (etypecase a
+		   (document)
+		   (element
+		    (assert-equal (qualified-name a) (qualified-name b))
+		    (mapcar (lambda (a b)
+			      (assert-equal (qualified-name a)
+					    (qualified-name b))
+			      (assert-equal (value a)
+					    (value b)))
+			    (list-attributes a)
+			    (list-attributes b)))
+		   (comment
+		    (assert-equal (data a) (data b)))
+		   (document-type
+		    (assert-equal (root-element-name a) (root-element-name b)))
+		   (processing-instruction
+		    (assert-equal (data a) (data b))
+		    (assert-equal (target a) (target b))))
+		 (mapcar #'recurse (list-children a) (list-children b))))
+	(recurse document (copy document)))
+      (values)))
+
+(deftest document.append-child
+    (let* ((root (make-element "root"))
+	   (document (make-document root)))
+      (expect-condition (append-child document (make-text "test")) stp-error)
+      (expect-condition (append-child document (make-text "   ")) stp-error)
+      (append-child document (make-comment "foo"))
+      (expect-condition (append-child document (make-element "test"))
+			stp-error)
+      (expect-condition (insert-child document (make-element "foo") 0)
+			stp-error)
+      (values)))
+
+(deftest document.delete-child
+    (let* ((root (make-element "root"))
+	   (document (make-document root)))
+      (expect-condition (detach root) stp-error)
+      (expect-condition (delete-child root document) stp-error)
+      (expect-condition (delete-child-if #'identity document :start 0 :count 1)
+			stp-error)
+      (append-child document (make-comment "test"))
+      (delete-child-if #'identity document :start 1 :count 1)
+      (assert-equal 1 (count-children-if #'identity document))
+      (let ((test (make-comment "test")))
+	(append-child document test)
+	(delete-child test document)
+	(assert-equal 1 (count-children-if #'identity document)))
+      (delete-child (make-comment "sd") document)
+      (expect-condition
+       (delete-child-if #'identity document :start 20 :count 1)
+       stp-error)
+      (values)))
+
+(deftest document.serialize
+    (let* ((root (make-element "root"))
+	   (document (make-document root)))
+      (serialize-to-string document))
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<root/>")
 
 
 (do-tests)

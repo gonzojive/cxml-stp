@@ -52,7 +52,7 @@
     (let ((i 0))
       (do-children (child node)
 	(unless (typep child 'element)
-	  (insert-child result i (copy child)))
+	  (insert-child result (copy child) i))
 	(incf i)))
     (setf (%base-uri result) (%base-uri node))
     result))

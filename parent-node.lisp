@@ -216,7 +216,7 @@
 (defgeneric check-deletion-allowed (parent child position))
 (defgeneric check-replacement-allowed (parent children))
 
-(defmethod insert-child ((parent parent-node) child i)
+(defmethod insert-child ((parent parent-node) (child node) i)
   (check-insertion-allowed parent child i)
   (%unchecked-insert-child parent child i)
   (setf (%parent child) parent))
@@ -250,7 +250,7 @@
     (unless (and (<= 0 start (length c))
 		 (<= end (length c))
 		 (<= start end))
-      (error "invalid bounding index designators"))
+      (stp-error "invalid bounding index designators"))
     (when c			  ;nothing to delete if not a vector yet
       (if from-end
 	  (let ((i (1- end)))
