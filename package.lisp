@@ -46,7 +46,7 @@
 	   #:insert-child-before
 	   #:insert-child-after
 	   #:delete-child-if
-	   #:replace-children
+	   #:delete-children
 	   #:replace-child
 
 	   ;; #:named-node
@@ -69,6 +69,7 @@
 	   #:find-namespace
 	   #:find-local-namespace
 	   #:find-extra-namespace
+	   #:map-extra-namespaces
 	   #:add-extra-namespace
 	   #:remove-extra-namespace
 

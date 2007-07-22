@@ -82,13 +82,13 @@
 
 ;;; CHILDREN-related convenience functions
 
-(defun prepend-child (child parent)
-  "@arg[child]{a @class{node}}
-   @arg[parent]{a @class{parent-node}}
+(defun prepend-child (parent child)
+  "@arg[parent]{a @class{parent-node}}
+   @arg[child]{a @class{node}}
    @short{Adds @code{child} as the first child of @code{parent}, if allowed.}
 
    Signals an error if the child already has a parent."
-  (insert-child child parent 0))
+  (insert-child parent child 0))
 
 (defun append-child (parent child)
   "@arg[child]{a @class{node}}
@@ -114,7 +114,7 @@
    @arg[key]{a designator for a function of one argument, or nil}
    @arg[test]{a designator for a function of two arguments, or nil}
    @return{a @class{node} or nil}
-   Searches for an child node of @code{parent} that satisfies the @code{test}
+   Searches for a child node of @code{parent} that satisfies the @code{test}
    and removes it, if allowed."
   (setf test (or test #'eql))
   (delete-child-if (lambda (c) (funcall test child c))

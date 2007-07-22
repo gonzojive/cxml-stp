@@ -114,6 +114,8 @@
    of @class{attribute} or @class{element} and has the specified local-name
    and namespace URI, and will return NIL otherwise.
 
+   If local-name is nil, only the namespace URI is considered for comparison.
+
    @see{local-name}
    @see{namespace-uri}"
   (lambda (x)
@@ -178,11 +180,13 @@
 
 (defun %remove-attribute (attribute)
   (alexandria:deletef (%attributes (parent attribute)) attribute)
-  (setf (%parent attribute) nil))
+  (setf (%parent attribute) nil)
+  attribute)
 
 (defun remove-attribute (element attribute)
   "@arg[element]{an instance of @class{element}}
    @arg[attribute]{an instance of @class{attribute}}
+   @return{the attribute}
    @short{Remove an attribute node from @code{element}.}
 
    It is an error if @code{attribute} is not an attribute of @code{element}."
@@ -332,6 +336,8 @@
   (cond
     ((equal prefix (namespace-prefix element))
       (namespace-uri element))
+    ((equal prefix "xml")
+     "http://www.w3.org/XML/1998/namespace")
     ((equal prefix "xmlns")
       "http://www.w3.org/2000/xmlns/")
     ((find-extra-namespace prefix element))
@@ -355,11 +361,25 @@
   (check-nc-name newval)
   (setf (%local-name node) newval))
 
+(defun check-uri-like (newval)
+  (declare (optimize speed (safety 0)))
+  (check-type newval string)
+  (when (some (lambda (c)
+		(let ((code (char-code c)))
+		  (or (> code 126)
+		      (and (< code 32)
+			   (not (eql code 9))
+			   (not (eql code 10))
+			   (not (eql code 13))))))
+	      newval)
+    (stp-error "invalid characters in URI")))
+
 (defun (setf namespace-uri) (newval element)
   (check-type element element)
   (unless newval
     (setf newval ""))
   (unless (equal newval (%namespace-uri element))
+    (check-uri-like newval)
     (if (zerop (length newval))
 	(unless (zerop (length (%namespace-prefix element)))
 	  (stp-error "attempt to set empty URI on element with a prefix"))
@@ -389,6 +409,12 @@
 		   (not (zerop (length newval))))
 	  (stp-error "cannot assign prefix to element in no namespace"))))
   (setf (%namespace-prefix element) newval))
+
+(defun delete-children (parent)
+  "@arg[parent]{an @class{element}}
+   @return{nil}
+   Deletes all children of @code{element}."
+  (delete-child-if (constantly t) parent))
 
 (defun childp (a b)
   (loop
@@ -445,6 +471,7 @@
    declarations on this element."
   (unless prefix (setf prefix ""))
   (unless uri (setf uri ""))
+  (check-uri-like uri)
   (unless
       (cond
 	((equal prefix "xmlns")
@@ -596,7 +623,7 @@
 	       (do-children (child x)
 		 (typecase child
 		   ((or comment processing-instruction))
-		   (text (write-string (string-value child)))
+		   (text (write-string (string-value child) s))
 		   (element (recurse child))))))
       (recurse node))))
 

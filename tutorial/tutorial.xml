@@ -132,20 +132,22 @@
 
   <page title="Adopting and Disowning"
 	description="Changing the node hierarchy">
-    From most general to most specific:
-    <br/>
-    <code>(defun <b>replace-children</b> (parent seq &amp;key start1 end1 start2 end2))</code>
+    Adopting:
     <code>(defun <b>insert-child</b> (parent child position))
-(defun <b>replace-child</b> (parent new-child old-child) ...)
-(defun <b>delete-child-if</b> (predicate parent &amp;rest args &amp;key from-end start end count key))</code>
-    <code>(defun <b>insert-child-after</b> (parent new-child ref-child) ....)
+(defun <b>insert-child-after</b> (parent new-child ref-child) ....)
 (defun <b>insert-child-before</b> (parent new-child ref-child) ...)
 (defun <b>append-child</b> (parent child) ...)
-(defun <b>prepend-child</b> (child parent) ...)
-
+(defun <b>prepend-child</b> (parent child) ...)</code>
+    <br/>
+    Disowning:
+    <code>
+(defun <b>delete-child-if</b> (predicate parent &amp;rest args &amp;key from-end start end count key))
 (defun <b>delete-nth-child</b> (idx parent) ...)
-(defun <b>delete-child</b> (child parent &amp;key from-end test start end count key) ...)</code>
-
+(defun <b>delete-child</b> (child parent &amp;key from-end test start end count key) ...)
+(defun <b>delete-children</b> (parent) ...)</code>
+    <br/>
+    In one step (for well-formedness):
+    <code>(defun <b>replace-child</b> (parent new-child old-child) ...)</code>
   </page>
 
   <page title="Elements">
@@ -202,21 +204,8 @@
   </page>
 
   <page title="Attributes (2)"
-	description="Example">
-    Making an attribute node:
-    <example title="Making an attribute node">
-      <repl>CL-USER> (stp:make-attribute "123" 
-                             "a:defaultValue" 
-                             "http://relaxng.org/ns/compatibility/annotations/1.0")</repl>
-      <result>
-#.(STP:ATTRIBUTE
-   :VALUE "123"
-   :LOCAL-NAME "defaultValue"
-   :NAMESPACE-PREFIX "a"
-   :NAMESPACE-URI "http://relaxng.org/ns/compatibility/annotations/1.0")</result>
-    </example>
-    <br/>
-    Working with attributes as nodes:
+	description="Attribute nodes">
+    Asking an element for its attribute nodes:
     <code>(defun <b>list-attributes</b> (element) ...)
 
 (defun <b>add-attribute</b> (element attribute) ...)
@@ -226,10 +215,9 @@
 (defun <b>find-attribute-if</b> (test element) ...)</code>
   </page>
 
-  <page title="Attributes (3)"
-	description="Accessing attribute values">
-    Accessing attribute values directly:
-    <example title="Accessing attribute values directly">
+  <page title="Accessing attribute values directly">
+    Accessing values without going through <tt>attribute</tt> nodes:
+    <example title="">
       <code>
 (defun <b>attribute-value</b> (element name &amp;optional uri) ...)
 (defun <b>(setf attribute-value)</b> (newval element name &amp;optional uri) ...)</code>
@@ -252,6 +240,31 @@
                     :VALUE "1"
                     :LOCAL-NAME "a"))
    :LOCAL-NAME "foo")</result>
+    </example>
+  </page>
+
+  <page title="make-attribute"
+	description="Example">
+    Value comes first because URI is optional argument:
+    <example title="Making an attribute node">
+      <repl>CL-USER> (stp:make-attribute "123"
+                             "a:defaultValue"
+                             "http://relaxng.org/ns/compatibility/annotations/1.0")</repl>
+      <result>
+#.(STP:ATTRIBUTE
+   :VALUE "123"
+   :LOCAL-NAME "defaultValue"
+   :NAMESPACE-PREFIX "a"
+   :NAMESPACE-URI "http://relaxng.org/ns/compatibility/annotations/1.0")</result>
+    </example>
+    <br/>
+    Without namespace:
+    <example title="Making an attribute node (without namespace)">
+      <repl>CL-USER> (stp:make-attribute "123" "defaultValue")</repl>
+      <result>
+#.(STP:ATTRIBUTE
+   :VALUE "123"
+   :LOCAL-NAME "defaultValue"></result>
     </example>
   </page>
 

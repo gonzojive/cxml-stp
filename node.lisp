@@ -35,7 +35,8 @@
   "If true (the default), a warning is issued if a string specified
    as a namespace URI does not have URI syntax.")
 (defun check-namespace-uri (uri)
-  (when (and *check-uri-syntax* (not (search "://" uri)))
+  (when (and *check-uri-syntax*
+	     (not (or (search "://" uri) (eql 4 (mismatch "uri:" uri)))))
     (warn "namespace URI does not look like an absolute URL: ~S" uri)))
 
 (define-condition stp-error (simple-error)
@@ -357,7 +358,7 @@
    @arg[key]{a designator for a function of one argument, or nil}
    @arg[test]{a designator for a function of two arguments, or nil}
    @arg[count]{an integer or nil}
-   @return{a @class{node} or nil}
+   @return{a sequence containing nodes}
    @short{Return a list of child nodes of @code{parent} from which nodes that
      do not satisfy @code{predicate} have been removed.}
 
@@ -413,7 +414,7 @@
    @arg[node]{a @class{node}}
    @arg[key]{a designator for a function of one argument, or nil}
    @arg[test]{a designator for a function of two arguments, or nil}
-   @return{a @class{node} or nil}
+   @return{a sequence containing nodes}
    Return a list of descendant nodes of @code{node} in pre-order, from which
    nodes that do not satisfy @code{predicate} have been removed."
   (setf key (or key #'identity))

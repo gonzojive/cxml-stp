@@ -74,7 +74,7 @@
 
 (defmethod detach ((node attribute))
   (when (parent node)
-    (remove-attribute node (parent node))))
+    (remove-attribute (parent node) node)))
 
 (defmethod string-value ((node attribute))
   (value node))

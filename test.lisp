@@ -54,6 +54,10 @@
   (unless (equal a b)
     (error "assertion failed: ~S and ~S are not EQUAL" a b)))
 
+(defun assert-node= (a b)
+  (unless (node= a b)
+    (error "assertion failed: ~S and ~S are not NODE=" a b)))
+
 (defmacro expect-condition (form type &optional data)
   `(handler-case
        (progn
@@ -74,6 +78,56 @@
        (progn
 	 (expect-condition ,form ,type)
 	 (values))))
+
+(defun named-node-= (a b)
+  (and (equal (namespace-uri a) (namespace-uri b))
+       (equal (namespace-prefix a) (namespace-prefix b))
+       (equal (local-name a) (local-name b))))
+
+(defun parent-node-= (e f)
+  (and (eql (count-children-if #'identity e)
+	    (count-children-if #'identity f))
+       (every #'node= (list-children e) (list-children f))))
+
+(defmethod node= ((e element) (f element))
+  (and (named-node-= e f)
+       (parent-node-= e f)
+       (every #'node=
+	      (sort (list-attributes e) #'string< :key #'qualified-name)
+	      (sort (list-attributes f) #'string< :key #'qualified-name))
+       (flet ((collect-namespaces (elt)
+		(let ((result ()))
+		  (map-extra-namespaces (lambda (k v) (push (cons k v) result))
+					elt)
+		  result)))
+	 (null
+	  (set-exclusive-or (collect-namespaces e) (collect-namespaces f))))))
+
+(defmethod node= ((a node) (b node))
+  nil)
+
+(defmethod node= ((e document) (f document))
+  (parent-node-= e f))
+
+(defmethod node= ((a attribute) (b attribute))
+  (and (named-node-= a b)
+       (equal (value a) (value b))))
+
+(defmethod node= ((a comment) (b comment))
+  (equal (data a) (data b)))
+
+(defmethod node= ((a text) (b text))
+  (equal (data a) (data b)))
+
+(defmethod node= ((a processing-instruction) (b processing-instruction))
+  (and (equal (data a) (data b))
+       (equal (target a) (target b))))
+
+(defmethod node= ((a document-type) (b document-type))
+  (and (equal (root-element-name a) (root-element-name b))
+       (equal (public-id a) (public-id b))
+       (equal (system-id a) (system-id b))
+       (equal (internal-subset a) (internal-subset b))))
 
 (rem-all-tests)
 
@@ -772,7 +826,6 @@
       (assert-equal temp (parent new))
       (values)))
 
-;; testReplaceRootElementWithComment
 (deftest document.replacement-allowed.1
     (let* ((root (make-element "root"))
 	   (document (make-document root))
@@ -816,28 +869,7 @@
       (insert-child document (make-document-type "text") 2)
       (append-child root (make-comment "after"))
       (append-child document (make-processing-instruction "text" "after"))
-      (labels ((recurse (a b)
-		 (assert-equal (type-of a) (type-of b))
-		 (etypecase a
-		   (document)
-		   (element
-		    (assert-equal (qualified-name a) (qualified-name b))
-		    (mapcar (lambda (a b)
-			      (assert-equal (qualified-name a)
-					    (qualified-name b))
-			      (assert-equal (value a)
-					    (value b)))
-			    (list-attributes a)
-			    (list-attributes b)))
-		   (comment
-		    (assert-equal (data a) (data b)))
-		   (document-type
-		    (assert-equal (root-element-name a) (root-element-name b)))
-		   (processing-instruction
-		    (assert-equal (data a) (data b))
-		    (assert-equal (target a) (target b))))
-		 (mapcar #'recurse (list-children a) (list-children b))))
-	(recurse document (copy document)))
+      (assert-node= document (copy document))
       (values)))
 
 (deftest document.append-child
@@ -880,4 +912,771 @@
 <root/>")
 
 
+;;;; ELEMENT
+
+(defmacro with-element-test ((&optional) &body body)
+  `(let* ((child1 (make-element "test"))
+	  (child2 (make-text "test2"))
+	  (child3 (make-comment "test3"))
+	  (child4 (make-element "pre:test" "http://www.example.com"))
+	  (child5 (make-element "test" "http://www.example.com"))
+	  (element (make-element "name")))
+     (append-child element child1)
+     (append-child element child2)
+     (append-child element child3)
+     (append-child element child4)
+     (append-child element child5)
+     (let ((str (format nil "  ~C~C" (code-char 13) (code-char 10))))
+       (append-child element (make-text str)))
+     ,@body))
+
+(deftest element.of-name.1
+    (with-element-test ()
+      (length (filter-children (of-name nil "http://www.example.com") element)))
+  2)
+
+(deftest element.of-name.2
+    (with-element-test ()
+      (length (filter-children (of-name nil) element)))
+  1)
+
+(deftest element.find-if
+    (with-element-test ()
+      (assert-equal child1 (find-child-if (of-name "test") element))
+      (assert-equal child4
+		    (find-child-if (of-name "test" "http://www.example.com")
+				   element))
+      (assert-equal nil (find-child-if (of-name "none") element))
+      (assert-equal nil (find-child-if (of-name "pre:test") element))
+      (assert-equal nil
+		    (find-child-if (of-name "none" "http://www.example.com")
+				   element))
+      (values)))
+
+(deftest element.xmlns-name
+    (let* ((name "xmlns")
+	   (e (make-element name)))
+      (assert-equal name (local-name e))
+      (assert-equal name (qualified-name e))
+      (assert-equal "" (namespace-prefix e))
+      (assert-equal "" (namespace-uri e))
+      (values)))
+
+(define-condition-test element.xmlns-prefix
+    (make-element "xmlns:foo" "http://www.example.org/")
+  stp-error)
+
+(deftest element.constructor.1
+    (let* ((name "Jethro")
+	   (e (make-element name)))
+      (assert-equal name (local-name e))
+      (assert-equal name (qualified-name e))
+      (assert-equal "" (namespace-prefix e))
+      (assert-equal "" (namespace-uri e))
+      (values)))
+
+(deftest element.constructor.2
+    (let* ((name "sakjdhjhd")
+	   (uri "http://www.something.com/")
+	   (e (make-element name uri)))
+      (assert-equal name (local-name e))
+      (assert-equal name (qualified-name e))
+      (assert-equal "" (namespace-prefix e))
+      (assert-equal uri (namespace-uri e))
+      (values)))
+
+(deftest element.constructor.3
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.something.com/")
+	   (e (make-element name uri)))
+      (assert-equal "sakjdhjhd" (local-name e))
+      (assert-equal name (qualified-name e))
+      (assert-equal "red" (namespace-prefix e))
+      (assert-equal uri (namespace-uri e))
+      (values)))
+
+(deftest element.emptyns.1
+    (let* ((name "sakjdhjhd")
+	   (uri "http://www.something.com/")
+	   (e (make-element name uri)))
+      (setf (namespace-uri e) "")
+      (assert-equal "" (namespace-uri e))
+      (values)))
+
+(deftest element.emptyns.2
+    (let* ((name "sakjdhjhd")
+	   (uri "http://www.something.com/")
+	   (e (make-element name uri)))
+      (serialize-to-string e))
+  "<sakjdhjhd xmlns=\"http://www.something.com/\"/>")
+
+(deftest element.emptyns.3
+    (let ((e (make-element "e")))
+      (add-attribute e (make-attribute "en"
+				       "xml:lang"
+				       "http://www.w3.org/XML/1998/namespace"))
+      (serialize-to-string e))
+  "<e xml:lang=\"en\"/>")
+
+(deftest element.doctype
+    (let* ((name "sakjdhjhd")
+	   (uri "http://www.something.com/")
+	   (e (make-element name uri)))
+      (expect-condition (append-child e (make-document-type name)) stp-error)
+      (values)))
+
+(deftest element.xml-namespace
+    (let* ((name "sakjdhjhd")
+	   (uri "http://www.something.com/")
+	   (e (make-element name uri))
+	   (xml "http://www.w3.org/XML/1998/namespace"))
+      (assert-equal xml (find-namespace "xml" e))
+      (expect-condition (add-extra-namespace e "xml" "http://www.yahoo.com/")
+			stp-error)
+      (assert-equal xml (find-namespace "xml" e))
+      (add-extra-namespace e "xml" xml)
+      (assert-equal xml (find-namespace "xml" e))
+      (values)))
+
+(deftest element.undeclare-default
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (child (make-element name uri))
+	   (parent (make-element "parent" "http://www.example.com/")))
+      (assert-equal "http://www.example.com/" (find-namespace "" parent))
+      (append-child parent child)
+      (add-extra-namespace child "" "")
+      (assert-equal "" (find-namespace "" child))
+      (assert-equal "http://www.example.com/" (find-namespace "" parent))
+      (let ((child2 (make-element "name" "http://www.default.com")))
+	(append-child parent child2)
+	(expect-condition (add-extra-namespace child2 "" "") stp-error))
+      (values)))
+
+(deftest element.setf-namespace-uri.1
+    (let* ((name "sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (add-attribute element (make-attribute "test" "attribute"))
+      (setf (namespace-uri element) "")
+      (assert-equal "" (find-namespace "" element))
+      (values)))
+
+(deftest element.setf-namespace-uri.2
+    (let* ((name "sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (add-attribute element (make-attribute "test" "red:attribute" uri))
+      (setf (namespace-uri element) uri)
+      (assert-equal uri (namespace-uri element))
+      (assert-equal uri (find-namespace "red" element))
+      (values)))
+
+(deftest element.setf-namespace-uri.3
+    (let* ((name "a")
+	   (uri "http://www.w3.org/1999/xhtml")
+	   (element (make-element name)))
+      (add-attribute element (make-attribute "http://www.elharo.com" "href"))
+      (setf (namespace-uri element) uri)
+      (assert-equal uri (namespace-uri element))
+      (values)))
+
+(deftest element.setf-namespace-uri.4
+    (let* ((name "a")
+	   (uri "http://www.w3.org/1999/xhtml")
+	   (element (make-element name)))
+      (add-attribute element (make-attribute "http://www.elharo.com"
+					     "html:href"
+					     uri))
+      (setf (namespace-uri element) "http://www.example.com")
+      (setf (namespace-prefix element) "pre")
+      (setf (namespace-uri element) uri)
+      (setf (namespace-prefix element) "html")
+      (assert-equal uri (namespace-uri element))
+      (assert-equal "html" (namespace-prefix element))
+      (values)))
+
+(deftest element.serialize.1
+    (let ((element (make-element "test")))
+      (add-attribute element
+		     (make-attribute "preserve"
+				     "xml:space"
+				     "http://www.w3.org/XML/1998/namespace"))
+      (add-attribute element
+		     (make-attribute "preserve"
+				     "zzz:zzz"
+				     "http://www.example.org"))
+      (serialize-to-string element))
+  "<test xmlns:zzz=\"http://www.example.org\" zzz:zzz=\"preserve\" xml:space=\"preserve\"/>")
+
+(deftest element.xml-prefix
+    (let ((element (make-element "xml:test"
+				 "http://www.w3.org/XML/1998/namespace")))
+      (map-extra-namespaces (lambda (k v) (error "bogus extra namespace"))
+			    element)
+      (assert-equal "<xml:test/>" (serialize-to-string element))
+      (values)))
+
+(deftest element.namespaces-mappings
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri)))
+      (add-extra-namespace e "blue" "http://www.blue.com/")
+      (add-extra-namespace e "green" "http://www.green.com/")
+      (let ((a1 (make-attribute "test" "test"))
+	    (a2 (make-attribute "data" "pre1:green" "http://www.green.com/"))
+	    (a3 (make-attribute "data" "yellow:sfs" "http://www.yellow.com/")))
+	(add-attribute e a1)
+	(add-attribute e a2)
+	(add-attribute e a3))
+      (assert-equal "http://www.red.com/" (find-namespace "red" e))
+      (assert-equal "http://www.green.com/" (find-namespace "green" e))
+      (assert-equal "http://www.blue.com/" (find-namespace "blue" e))
+      (assert-equal "http://www.green.com/" (find-namespace "pre1" e))
+      (assert-equal "http://www.yellow.com/" (find-namespace "yellow" e))
+      (let ((e2 (make-element "mauve:child" "http://www.mauve.com/")))
+	(append-child e e2)
+	(assert-equal "http://www.red.com/" (find-namespace "red" e2))
+	(assert-equal "http://www.green.com/" (find-namespace "green" e2))
+	(assert-equal "http://www.blue.com/" (find-namespace "blue" e2))
+	(assert-equal "http://www.green.com/" (find-namespace "pre1" e2))
+	(assert-equal "http://www.yellow.com/" (find-namespace "yellow" e2))
+	(assert-equal nil (find-namespace "head" e2)))
+      (expect-condition (add-extra-namespace e "pre1" "http://www.blue2.com")
+			stp-error)
+      (let ((a (make-attribute "data" "pre1:mauve" "http://www.sadas.com/")))
+	(expect-condition (add-attribute e a) stp-error))
+      (let ((a (make-attribute "data" "pre1:green" "http://www.example.com/")))
+	(expect-condition (add-attribute e a) stp-error))
+      (remove-extra-namespace e "green")
+      (assert-equal nil (find-namespace "green" e))
+      (add-extra-namespace e "green" "http://www.green2.com/")
+      (assert-equal "http://www.green2.com/" (find-namespace "green" e))
+      (values)))
+
+(deftest element.attributes
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri))
+	   (a1 (make-attribute "simple" "name"))
+	   (a2 (make-attribute "data" "pre1:green" "http://www.green.com/")))
+      (add-attribute e a1)
+      (add-attribute e a2)
+      (assert-equal a2 (find-attribute-named e "green" "http://www.green.com/"))
+      (assert-equal a1 (find-attribute-named e "name"))
+      (assert-equal a1 (find-attribute-named e "name" ""))
+      (assert-equal e (parent a1))
+      (assert-equal "simple" (value (find-attribute-named e "name")))
+      (detach a1)
+      (assert-equal nil (parent a1))
+      (assert-equal nil (find-attribute-named e "name"))
+      (assert-equal a2 (remove-attribute e a2))
+      (assert-equal nil (parent a2))
+      (assert-equal nil (find-attribute-named e "green" "http://www.green.com/"))
+      (values)))
+
+(deftest element.remove-attribute.1
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri))
+	   (a1 (make-attribute "simple" "name"))
+	   (a2 (make-attribute "data" "pre1:green" "http://www.green.com/")))
+      (add-attribute e a1)
+      (add-attribute e a2)
+      (expect-condition (remove-attribute e nil) type-error)
+      (values)))
+
+(deftest element.remove-attribute.2
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri))
+	   (a (make-attribute "simple" "name")))
+      (add-attribute e (make-attribute "value" "name"))
+      (expect-condition (remove-attribute e a) stp-error)
+      (values)))
+
+(deftest element.string-value
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri)))
+      (assert-equal (string-value e) "")
+      (append-child e (make-text "data"))
+      (assert-equal (string-value e) "data")
+      (append-child e (make-text " moredata"))
+      (assert-equal (string-value e) "data moredata")
+      (append-child e (make-comment " more data"))
+      (assert-equal (string-value e) "data moredata")
+      (append-child e (make-processing-instruction "target" "more data"))
+      (assert-equal (string-value e) "data moredata")
+      (let ((e2 (make-element "child")))
+	(append-child e e2)
+	(assert-equal (string-value e) "data moredata")
+	(append-child e2 (make-text "something"))
+	(assert-equal (string-value e) "data moredatasomething"))
+      (values)))
+
+(deftest element.setf-local-name
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri)))
+      (assert-equal (local-name e) "sakjdhjhd")
+      (dolist (x '("dude" "digits__" "digits1234" "digits-z"))
+	(assert-equal x (setf (local-name e) x))
+	(assert-equal (local-name e) x)) 
+      (expect-condition (setf (local-name e) "spaces ") stp-error)
+      (expect-condition (setf (local-name e) "digits:test") stp-error)
+      (expect-condition (setf (local-name e) "digits!test") stp-error)
+      (expect-condition
+       (setf (local-name e) (format nil "digits~Ctest" (code-char 0)))
+       stp-error)
+      (values)))
+
+(deftest element.setf-namespace-prefix
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri)))
+      (assert-equal (namespace-prefix e) "red")
+      (dolist (x '("dude" "digits__" "digits1234" "digits-z" ""))
+	(assert-equal x (setf (namespace-prefix e) x))
+	(assert-equal (namespace-prefix e) x)) 
+      (dolist (y '("spaces "
+		   "digits:test"
+		   "digits!test"
+		   #.(format nil "digits~Ctest" (code-char 0))))
+	(expect-condition (setf (namespace-prefix e) y) stp-error))
+      (values)))
+
+(defparameter *legal-uris*
+  '("http://www.is.edu/sakdsk#sjadh"
+    "http://www.is.edu/sakdsk?name=value&name=head"
+    "uri:isbn:0832473864"
+    "http://www.examples.com:80"
+    "http://www.examples.com:80/"
+    "http://www.is.edu/%20sakdsk#sjadh"))
+
+;;; we don't actually check URI syntax, but we still have to prevent
+;;; URIs from slipping in that aren't even make up of XML characters
+(defparameter *very-illegal-uris*
+  (list (string (code-char 0))
+	(string (code-char 128))))
+
+(deftest element.setf-namespace-uri.5
+    (let* ((name "a")
+	   (uri "http://www.w3.org/1999/xhtml")
+	   (element (make-element name uri)))
+      (assert-equal (namespace-uri element) uri)
+      (dolist (legal *legal-uris*)
+	(setf (namespace-uri element) legal)
+	(assert-equal (namespace-uri element) legal))
+      (let ((prev (namespace-uri element)))
+	(dolist (illegal *very-illegal-uris*)
+	  (expect-condition (setf (namespace-uri element) illegal) stp-error))
+	(assert-equal (namespace-uri element) prev))
+      (values)))
+
+(deftest element.setf-namespace-uri.6
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (add-extra-namespace element "red" "http://www.red.com/")
+      (expect-condition (setf (namespace-uri element) "http://www.example.com")
+			stp-error)
+      (values)))
+
+(deftest element.setf-namespace-uri.7
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri))
+	   (a (make-attribute  "value" "red:test" "http://www.red.com/")))
+      (add-attribute element a)
+      (expect-condition (setf (namespace-uri element) "http://www.example.com")
+			stp-error)
+      (values)))
+
+(deftest element.setf.namespace-uri.8
+    (let ((e (make-element "prefix:name" "http://www.foo.com/")))
+      (expect-condition (setf (namespace-uri e) "") stp-error)
+      (expect-condition (setf (namespace-uri e) nil) stp-error)
+      (values)))
+
+(deftest element.setf.namespace-prefix.1
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (add-extra-namespace element "blue" "http://www.foo.com/")
+      (add-attribute element (make-attribute
+			      "value" "green:money" "http://www.example.com/"))
+      (add-extra-namespace element "purple" uri)
+      (add-attribute element (make-attribute "value" "mauve:money" uri))
+      (expect-condition (setf (namespace-prefix element) "blue")
+			stp-error)
+      (expect-condition (setf (namespace-prefix element) "green")
+			stp-error)
+      (setf (namespace-prefix element) "purple")
+      (assert-equal "purple" (namespace-prefix element))
+      (setf (namespace-prefix element) "mauve")
+      (assert-equal "mauve" (namespace-prefix element))
+      (values)))
+
+(deftest element.add-extra-namespace
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (dolist (legal *legal-uris*)
+	(remove-extra-namespace element "prefix")
+	(add-extra-namespace element "prefix" legal)
+	(assert-equal legal (find-namespace "prefix" element)))
+      (dolist (illegal *very-illegal-uris*)
+	(remove-extra-namespace element "prefix")
+	(expect-condition (add-extra-namespace element "prefix" illegal)
+			  stp-error))
+      (values)))
+
+(deftest element.insert-child.nil
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (expect-condition (insert-child element nil 0) error)
+      (values)))
+
+(deftest element.append-child.nil
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (expect-condition (append-child element 0) error)
+      (values)))
+
+(deftest element.insert-child.1
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (e (make-element name uri))
+	   (e2 (make-element "mv:child" "http://www.mauve.com"))
+	   (e3 (make-element "mv:child" "http://www.mauve.com"))
+	   (e4 (make-element "mv:child" "http://www.mauve.com")))
+      (insert-child e e2 0)
+      (insert-child e e3 0)
+      (insert-child e3 e4 0)
+      (assert-equal e3 (nth-child 0 e))
+      (let* ((root (make-element "root"))
+	     (doc (make-document root)))
+	(expect-condition (insert-child e doc 0) stp-error))
+      (expect-condition (insert-child e e2 0) stp-error)
+      (expect-condition (insert-child e e4 0) stp-error)
+      (expect-condition (insert-child e nil 0) error)
+      (expect-condition (insert-child e (make-comment "test") 20) error)
+      (expect-condition (insert-child e (make-comment "test") -20) error)
+      (values)))
+
+(deftest element.filter-children.1
+    (with-element-test ()
+      (let ((children (filter-children (alexandria:of-type 'element) element)))
+	(assert-equal 3 (length children))
+	(assert-equal child1 (elt children 0))
+	(assert-equal child4 (elt children 1))
+	(assert-equal child5 (elt children 2)))
+      (let ((children (filter-children (of-name "nonesuch") element)))
+	(assert-equal 0 (length children)))
+      (let ((children (filter-children (of-name "test") element)))
+	(assert-equal 1 (length children))
+	(assert-equal child1 (elt children 0)))
+      (let ((children
+	     (filter-children (of-name "test" "http://www.example.com")
+			      element)))
+	(assert-equal 2 (length children))
+	(assert-equal child4 (elt children 0))
+	(assert-equal child5 (elt children 1)))
+      (values)))
+
+(deftest element.add-attribute.1
+    (let ((element (make-element "name"))
+	  (a1 (make-attribute "name" "value"))
+	  (a2 (make-attribute "simple"
+			      "xlink:type"
+			      "http://www.w3.org/TR/1999/xlink")))
+      (add-attribute element a1)
+      (add-attribute element a2)
+      (assert-equal 2 (length (list-attributes element)))
+      (let ((element2 (make-element "name")))
+	(expect-condition (add-attribute element2 a1) stp-error))
+      (detach a1)
+      (let ((funky (make-element "xlink:funky" "http://www.funky.org")))
+	(expect-condition (add-attribute funky a2) stp-error))
+      (detach a2)
+      (let ((notasfunky
+	     (make-element "prefix:funky" "http://www.w3.org/TR/1999/xlink")))
+	(add-attribute notasfunky a2))
+      (let ((a3 (make-attribute "simple"
+				"xlink:type"
+				"http://www.w3.org/TR/1999/xlink"))
+	    (a4 (make-attribute "simple"
+				"xlink:href"
+				"http://www.w3.org/1998/xlink"))
+	    (test (make-element "test")))
+	(add-attribute test a3)
+	(expect-condition (add-attribute test a4) stp-error))
+      (let ((a5 (make-attribute "simple"
+				"xlink:type"
+				"http://www.w3.org/TR/1999/xlink"))
+	    (a6 (make-attribute "simple"
+				"xlink:type"
+				"http://www.w3.org/1998/xlink"))
+	    (test2 (make-element "test")))
+	(add-attribute test2 a5)
+	(expect-condition (add-attribute test2 a6) stp-error))
+      (values)))
+
+(deftest element.add-attribute.2
+    (let ((element (make-element "name")))
+      (add-extra-namespace element "xlink" "http://www.w3.org/TR/1999/xlink")
+      (add-extra-namespace element "pre" "http://www.example.com")
+      (let ((a1 (make-attribute "values" "name"))
+	    (a2 (make-attribute "simple"
+				"xlink:type" 
+				"http://www.w3.org/TR/1999/xlink")))
+	(add-attribute element a1)
+	(add-attribute element a2)
+	(assert-equal 2 (length (list-attributes element))))
+      (expect-condition
+       (add-attribute element
+		      (make-attribute "value"
+				      "pre:att"
+				      "ftp://example.com/"))
+       stp-error)
+      (add-attribute element
+		     (make-attribute "value"
+				     "ok:att"
+				     "ftp://example.com/"))
+      (assert-equal 3 (length (list-attributes element)))
+      (expect-condition
+       (add-extra-namespace element "ok" "http://www.example.net")
+       stp-error)
+      (assert-equal "ftp://example.com/" (find-namespace "ok" element))
+      (assert-equal "http://www.w3.org/TR/1999/xlink"
+		    (find-namespace "xlink" element))
+      (assert-equal "http://www.example.com" (find-namespace "pre" element))
+      (values)))
+
+(deftest element.triple
+    (serialize-to-string
+     (copy
+      (document-element
+       (cxml:parse #1="<b><c1/><c2/></b>" (make-builder)))))
+  #1#)
+
+(deftest element.copy.1
+    (let ((parent (make-element "parent"))
+	  (child (make-element "child")))
+      (append-child parent child)
+      (assert-node= child (copy child))
+      (values)))
+
+(deftest element.copy.2
+    (let ((parent (make-element "parent"))
+	  (child (make-element "child")))
+      (append-child parent child)
+      (assert-node= parent (copy parent))
+      (values)))
+
+(deftest element.copy.3
+    (let ((parent (make-element "parent"))
+	  (a (make-attribute "value" "name")))
+      (add-attribute parent a)
+      (let ((copy (copy parent)))
+	(assert-node= parent copy)
+	(let ((copied (car (list-attributes copy))))
+	  (assert-node= copied a)
+	  (assert-equal copy (parent copied))))
+      (values)))
+
+(deftest element.copy.4
+    (let ((parent (make-element "parent")))
+      (assert-node= parent (copy parent))
+      (values)))
+
+(deftest element.copy.5
+    (let* ((root (make-element "parent"))
+	   (d (make-document root)))
+      (assert-node= d (copy d))
+      (values)))
+
+(deftest element.copy.6
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (base-uri "http://www.example.com/")
+	   (e (make-element name uri)))
+      (add-extra-namespace e "blue" "http://www.blue.com")
+      (add-extra-namespace e "green" "http://www.green.com")
+      (let ((a1 (make-attribute "test" "test"))
+	    (a2 (make-attribute "data" "pre1:green" "http://www.green.com"))
+	    (a3 (make-attribute "data"
+				"yellow:sfsdadf"
+				"http://www.yellow.com/")))
+	(add-attribute e a1)
+	(add-attribute e a2)
+	(add-attribute e a3))
+      (append-child e (make-element "mv:child" "http://www.mauve.com"))
+      (let ((e3 (make-element "mv:child" "http://www.mauve.com")))
+	(prepend-child e e3)
+	(append-child e3 (make-element "mv:child" "http://www.mauve.com")))
+      (setf (base-uri e) base-uri)
+      (let ((copy (copy e)))
+	(assert-equal (find-namespace "red" e) (find-namespace "red" copy))
+	(assert-equal (find-namespace "blue" e) (find-namespace "blue" copy))
+	(assert-equal (string-value e) (string-value copy))
+	(let ((ea (find-attribute-named e "test"))
+	      (ca (find-attribute-named copy "test")))
+	  (assert-equal (value ea) (value ca)))
+	(assert-equal (base-uri e) (base-uri copy)))
+      (values)))
+
+(deftest element.copy.7
+    (let* ((top (make-element "e"))
+	   (parent top))
+      (loop
+	 for parent = top then child
+	 for i from 0 below 100
+	 for child = (make-element (format nil "e~D" i))
+	 do (append-child parent child))
+      (assert-node= top (copy top))
+      (values)))
+
+(deftest element.delete-children.1
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (parent (make-element name uri))
+	   (a1 (make-attribute "test" "test")))
+      (add-attribute parent a1)
+      (let ((child1 (make-element "mv:child" "http://www.mauve.com"))
+	    (child2 (make-element "mv:child" "http://www.mauve.com"))
+	    (grandchild (make-element "mv:child" "http://www.mauve.com")))
+	(append-child parent child1)
+	(append-child parent child2)
+	(append-child child2 grandchild)
+	(assert-equal child2 (parent grandchild))
+	(assert-equal parent (parent child1))
+	(assert-equal parent (parent child2))
+	(delete-children parent)
+	(assert-equal nil (list-children parent))
+	(assert-equal nil (parent child1))
+	(assert-equal nil (parent child2))
+	(assert-equal child2 (parent grandchild))
+	(assert-equal parent (parent a1)))
+      (values)))
+
+(deftest element.delete-children.2
+    (let ((base "http://www.example.com/")
+	  (parent (make-element "parent"))
+	  (child (make-element "child")))
+      (setf (base-uri parent) base)
+      (append-child parent child)
+      (delete-children parent)
+      (assert-equal base (base-uri child))
+      (values)))
+
+(deftest element.delete-children.3
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (parent (make-element name uri))
+	   (a1 (make-attribute "test" "test")))
+      (add-attribute parent a1)
+      (let ((child1 (make-text "http://www.mauve.com"))
+	    (child2 (make-processing-instruction
+		     "child" "http://www.mauve.com"))
+	    (child3 (make-comment "http://www.mauve.com")))
+	(append-child parent child1)
+	(append-child parent child2)
+	(append-child parent child3)
+	(assert-equal parent (parent child3))
+	(assert-equal parent (parent child1))
+	(assert-equal parent (parent child2))
+	(delete-children parent)
+	(assert-equal nil (list-children parent))
+	(assert-equal nil (parent child1))
+	(assert-equal nil (parent child2))
+	(assert-equal nil (parent child3))
+	(assert-equal parent (parent a1))
+	(values))))
+
+(deftest element.attribute-value
+    (let* ((name "sakjdhjhd")
+	   (e (make-element name)))
+      (assert-equal nil (attribute-value e "test"))
+      (assert-equal
+       nil
+       (attribute-value e "base" "http://www.w3.org/XML/1998/namespace"))
+      (add-attribute e (make-attribute "value" "test"))
+      (add-attribute e (make-attribute
+			"http://www.example.com/"
+			"xml:base"
+			"http://www.w3.org/XML/1998/namespace"))
+      (assert-equal "value" (attribute-value e "test"))
+      (assert-equal
+       "http://www.example.com/"
+       (attribute-value e "base" "http://www.w3.org/XML/1998/namespace"))
+      (assert-equal nil (attribute-value e "xml:base"))
+      (assert-equal nil (attribute-value e "base"))
+      (assert-equal
+       nil
+       (attribute-value e "test" "http://www.w3.org/XML/1998/namespace"))
+      (values)))
+
+(deftest element.find-attribute-named
+    (let* ((name "sakjdhjhd")
+	   (e (make-element name)))
+      (assert-equal nil (find-attribute-named e "test"))
+      (assert-equal
+       nil
+       (find-attribute-named e "base" "http://www.w3.org/XML/1998/namespace"))
+      (let ((a1 (make-attribute "value" "test"))
+	    (a2 (make-attribute
+		 "http://www.example.com/"
+		 "xml:base"
+		 "http://www.w3.org/XML/1998/namespace")))
+	(add-attribute e a1)
+	(add-attribute e a2)
+	(assert-equal a1 (find-attribute-named e "test"))
+	(assert-equal
+	 a2
+	 (find-attribute-named e
+			       "base"
+			       "http://www.w3.org/XML/1998/namespace")))
+      (values)))
+
+(deftest element.namespace-prefix.1
+    (namespace-prefix (make-element "html"))
+  "")
+
+(deftest element.namespace-prefix.2
+    (let ((test (make-element
+		 "xml:base"
+		 "http://www.w3.org/XML/1998/namespace")))
+      (assert-equal "xml" (namespace-prefix test))
+      (assert-equal "http://www.w3.org/XML/1998/namespace"
+		    (namespace-uri test))
+      (assert-equal "xml:base" (qualified-name test))
+      (values)))
+
+(define-condition-test element.namespace-prefix.3
+    (make-element "xml:base" "http://www.example.org/")
+  stp-error)
+
+(define-condition-test element.namespace-prefix.4
+    (make-element "test:base" "http://www.w3.org/XML/1998/namespace")
+  stp-error)
+
+(define-condition-test element.name.1
+    (make-element "")
+  stp-error)
+
+(define-condition-test element.name.2
+    (make-element "1Kelvin")
+  stp-error)
+
+(define-condition-test element.name.3
+    (make-element nil)
+  type-error)
+
+
 (do-tests)
+
+;; next: testRemoveNonElementChildren
