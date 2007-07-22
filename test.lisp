@@ -1677,6 +1677,290 @@
   type-error)
 
 
+;;;; ATTRIBUTE
+
+(defmacro with-ATTRIBUTE-test ((&optional) &body body)
+  `(let* ((a1 (make-attribute "value" "test"))
+	  (a2 (make-attribute "  value  " "test")))
+     ,@body))
+
+(deftest attribute.count-children
+    (with-attribute-test ()
+      (count-children-if (constantly t) a1))
+  0)
+
+(define-condition-test attribute.nth-child
+    (with-attribute-test ()
+      (nth-child 0 a1))
+  error)
+
+(deftest attribute.make-attribute
+    (with-attribute-test ()
+      (assert-equal "test" (local-name a1))
+      (assert-equal "test" (qualified-name a1))
+      (assert-equal "" (namespace-prefix a1))
+      (assert-equal "" (namespace-uri a1))
+      (assert-equal "value" (value a1))
+      (assert-equal "  value  " (value a2))
+      (values)))
+
+(deftest attribute.setf.local-name
+    (let ((a (make-attribute "value" "name")))
+      (setf (local-name a) "newname")
+      (assert-equal "newname" (local-name a))
+      (expect-condition (setf (local-name a) "pre:a") stp-error)
+      (values)))
+
+(deftest attribute.setf.local-name
+    (let ((a (make-attribute "value" "pre:name" "http://www.example.org")))
+      (setf (local-name a) "newname")
+      (assert-equal "newname" (local-name a))
+      (assert-equal "pre:newname" (qualified-name a))
+      (values)))
+
+(define-condition-test attribute.xmlns.1
+    (make-attribute "http://www.w3.org/TR" "xmlns")
+  stp-error)
+
+(define-condition-test attribute.xmlns.2
+    (make-attribute "http://www.w3.org/TR" "xmlns:prefix")
+  stp-error)
+
+(define-condition-test attribute.xmlns.3
+    (make-attribute "http://www.w3.org/"
+		    "xmlns"
+		    "http://www.w3.org/2000/xmlns/")
+  stp-error)
+
+(define-condition-test attribute.xmlns.4
+    (make-attribute "http://www.w3.org/"
+		    "xmlns:pre"
+		    "http://www.w3.org/2000/xmlns/")
+  stp-error)
+
+(deftest attribute.xml-base
+    (let* ((xml-namespace "http://www.w3.org/XML/1998/namespace")
+	   (a1 (make-attribute "http://www.w3.org/" "xml:base" xml-namespace)))
+      (assert-equal "base" (local-name a1))
+      (assert-equal "xml:base" (qualified-name a1))
+      (assert-equal xml-namespace (namespace-uri a1))
+      (dolist (str '("http://www.example.com/>"
+		     "http://www.example.com/<"
+		     #.(format nil "http://www.example.com/~C"
+			(code-char #x00FE))))
+	(setf (value a1) str)
+	(assert-equal (value a1) str))
+      (values)))
+
+(deftest attribute.xml-prefix
+    (progn
+      (expect-condition (make-attribute "http://www.w3.org/" "xml:base")
+			stp-error)
+      (expect-condition (make-attribute "preserve" "xml:space")
+			stp-error)
+      (expect-condition (make-attribute "fr-FR" "xml:lang")
+			stp-error)
+      (let* ((xml-namespace "http://www.w3.org/XML/1998/namespace")
+	     (a1 (make-attribute "http://www.w3.org/"
+				 "xml:base"
+				 xml-namespace)))
+	(assert-equal "base" (local-name a1))
+	(assert-equal "xml:base" (qualified-name a1))
+	(assert-equal xml-namespace (namespace-uri a1))
+	(let ((a2 (make-attribute "preserve"
+				  "xml:space"
+				  xml-namespace)))
+	  (assert-equal "space" (local-name a2))
+	  (assert-equal "xml:space" (qualified-name a2))
+	  (assert-equal xml-namespace (namespace-uri a2)))
+	(let ((a3 (make-attribute "en-UK"
+				  "xml:lang"
+				  xml-namespace)))
+	  (assert-equal "lang" (local-name a3))
+	  (assert-equal "xml:lang" (qualified-name a3))
+	  (assert-equal xml-namespace (namespace-uri a3)))
+	(expect-condition
+	 (make-attribute "http://www.w3.org/"
+			 "xml:base"
+			 "http://www.notTheXMLNamespace")
+	 stp-error)
+	(values))))
+
+(deftest attribute.xml-lang
+    (let* ((xml-namespace "http://www.w3.org/XML/1998/namespace")
+	   (a1 (make-attribute "" "xml:lang" xml-namespace)))
+      (assert-equal "" (value a1))
+      (values)))
+
+(define-condition-test attribute.xml-uri
+    (make-attribute "value" "test:base" "http://www.w3.org/XML/1998/namespace")
+  stp-error)
+
+(deftest attribute.serialize.1
+    (let ((e (make-element "test")))
+      (add-attribute e (make-attribute "<" "a1"))
+      (add-attribute e (make-attribute ">" "a2"))
+      (add-attribute e (make-attribute "\"" "a3"))
+      (add-attribute e (make-attribute "'" "a4"))
+      (add-attribute e (make-attribute "&" "a5"))
+      (serialize-to-string e))
+  "<test a5=\"&amp;\" a4=\"'\" a3=\"&quot;\" a2=\"&gt;\" a1=\"&lt;\"/>")
+
+(deftest attribute.serialize.2
+    (let ((e (make-element "test")))
+      (add-attribute e (make-attribute (string (code-char 32)) "a1"))
+      (add-attribute e (make-attribute (string (code-char 10)) "a2"))
+      (add-attribute e (make-attribute (string (code-char 13)) "a3"))
+      (add-attribute e (make-attribute (string (code-char 9)) "a4"))
+      (serialize-to-string e))
+  "<test a4=\"&#9;\" a3=\"&#13;\" a2=\"&#10;\" a1=\" \"/>")
+
+(deftest attribute.serialize.3
+    (let ((e (make-element "test")))
+      (add-attribute e (make-attribute "=,.!@#$%^*()_-'[]{}+/?;:`|\\" "a"))
+      (serialize-to-string e))
+"<test a=\"=,.!@#$%^*()_-'[]{}+/?;:`|\\\"/>")
+
+(deftest attribute.setf.value
+    (let ((a (make-attribute "test" "test")))
+      (dolist (legal '("Hello"
+		       "hello there"
+		       "  spaces on both ends  "
+		       " quotes \" \" quotes"
+		       " single \'\' quotes"
+		       " both double and single \"\'\"\' quotes" 
+		       " angle brackets <  > <<<"
+		       " carriage returns \r\r\r"
+		       " ampersands & &&& &name; "))
+	(setf (value a) legal)
+	(assert-equal (value a) legal))
+      (expect-condition (setf (value a) (string (code-char 0))) stp-error)
+      (values)))
+
+(deftest attribute.names
+    (let* ((prefix "testPrefix")
+	   (name "testName")
+	   (uri "http://www.elharo.com/")
+	   (value "  here's some data")
+	   (qname (concatenate 'string prefix ":" name))
+	   (a1 (make-attribute value qname uri)))
+      (assert-equal name (local-name a1))
+      (assert-equal qname (qualified-name a1))
+      (assert-equal uri (namespace-uri a1))
+      (values)))
+
+(deftest attribute.copy.1
+    (let* ((c1 (make-attribute "data" "test"))
+	   (c2 (copy c1)))
+      (assert-equal (value c1) (value c2))
+      (assert-equal (local-name c1) (local-name c2))
+      (assert-equal (qualified-name c1) (qualified-name c2))
+      (assert (not (eql c1 c2)))
+      (assert-equal nil (parent c2))
+      (values)))
+
+;;; fixme: testSurrogates
+
+(deftest attribute.rename-attribute.1
+    (let ((a (make-attribute "data" "red:prefix" "http://www.example.com")))
+      (rename-attribute a nil nil)
+      (assert-equal "" (namespace-uri a))
+      (assert-equal "" (namespace-prefix a))
+      (values)))
+
+(deftest attribute.rename-attribute.2
+    (let ((a (make-attribute "data" "red:prefix" "http://www.example.com"))
+	  (e (make-element "pre:test" "http://www.example.org/")))
+      (add-attribute e a)
+      (rename-attribute a "pre" "http://www.example.org/")
+      (assert-equal "http://www.example.org/" (namespace-uri a))
+      (assert-equal "pre" (namespace-prefix a))
+      (assert-equal "http://www.example.org/" (namespace-uri e))
+      (assert-equal "pre" (namespace-prefix e))
+      (values)))
+
+(deftest attribute.rename-attribute.3
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (prefix "red")
+	   (a (make-attribute "" name uri)))
+      (assert-equal uri (namespace-uri a))
+      (dolist (legal *legal-uris*)
+	(rename-attribute a prefix legal)
+	(assert-equal legal (namespace-uri a)))
+      (dolist (illegal *very-illegal-uris*)
+	(expect-condition (rename-attribute a prefix illegal) stp-error))
+      (values)))
+
+(deftest attribute.rename-attribute.4
+    (let ((a (make-attribute "value" "name")))
+      (expect-condition (rename-attribute a "pre" "") stp-error)
+      (expect-condition (rename-attribute a "" "http://www.example.com")
+			stp-error)
+      (values)))
+
+(deftest attribute.node-properties
+    (let ((a (make-attribute "data" "test")))
+      (assert-equal nil (parent a))
+      (let ((element (make-element "test")))
+	(add-attribute element a)
+	(assert-equal element (parent a))
+	(assert-equal a (find-attribute-named element "test"))
+	(remove-attribute element a)
+	(assert-equal nil (find-attribute-named element "test")))
+      (values)))
+
+(deftest attribute.constraints
+    (let ((element (make-element "test"))
+	  (a1 (make-attribute "valueFoo" "foo:data" "http://www.example.com"))
+	  (a2 (make-attribute "valueBar" "bar:data" "http://www.example.com"))
+	  (a3 (make-attribute "valueFoo" "data"))
+	  (a4 (make-attribute "valueBar" "data")))
+      ;; add initial attribute
+      (add-attribute element a1)
+      (assert-equal "valueFoo"
+		    (attribute-value element "data" "http://www.example.com"))
+      (assert-equal (list a1) (list-attributes element))
+      ;; replace it
+      (add-attribute element a2)
+      (assert-equal "valueBar"
+		    (attribute-value element "data" "http://www.example.com"))
+      (assert-equal (list a2) (list-attributes element))
+      ;; add a different one
+      (add-attribute element a3)
+      (assert-equal "valueFoo" (attribute-value element "data"))
+      (assert-equal "valueBar"
+		    (attribute-value element "data" "http://www.example.com"))
+      (assert-equal 2 (length (list-attributes element)))
+      ;; replace
+      (add-attribute element a4)
+      (assert-equal "valueBar" (attribute-value element "data"))
+      (assert-equal "valueBar"
+		    (attribute-value element "data" "http://www.example.com"))
+      (assert-equal 2 (length (list-attributes element)))
+      ;; different prefix
+      (let ((a5 (make-attribute "valueRed" "red:ab" "http://www.example.org"))
+	    (a6 (make-attribute
+		 "valueGreen" "green:cd" "http://www.example.org")))
+	(add-attribute element a5)
+	(add-attribute element a6)
+	(assert-equal "valueRed"
+		      (attribute-value element "ab" "http://www.example.org"))
+	(assert-equal "valueGreen"
+		      (attribute-value element "cd" "http://www.example.org")))
+      (values)))
+
+(deftest attribute.double-add
+    (let ((element (make-element "test"))
+	  (a (make-attribute "bar" "foo")))
+      (add-attribute element a)
+      (remove-attribute element a)
+      (let ((copy (copy element)))
+	(add-attribute copy (make-attribute "newvalue" "a"))
+	(assert-equal 1 (length (list-attributes copy))))
+      (values)))
+
+
 (do-tests)
 
 ;; next: testRemoveNonElementChildren

@@ -126,6 +126,7 @@
    @see{local-name}"
   (unless prefix (setf prefix ""))
   (unless uri (setf uri ""))
+  (check-uri-like uri)
   (when (equal prefix "xmlns")
     (stp-error "attempt to represent a namespace declaration as an ATTRIBUTE"))
   (when (xor (equal uri "http://www.w3.org/XML/1998/namespace")
