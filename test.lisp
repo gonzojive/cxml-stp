@@ -79,14 +79,17 @@
 	 (expect-condition ,form ,type)
 	 (values))))
 
+(defun child-count (node)
+  (count-children-if (constantly t) node))
+
 (defun named-node-= (a b)
   (and (equal (namespace-uri a) (namespace-uri b))
        (equal (namespace-prefix a) (namespace-prefix b))
        (equal (local-name a) (local-name b))))
 
 (defun parent-node-= (e f)
-  (and (eql (count-children-if #'identity e)
-	    (count-children-if #'identity f))
+  (and (eql (child-count e)
+	    (child-count f))
        (every #'node= (list-children e) (list-children f))))
 
 (defmethod node= ((e element) (f element))
@@ -219,7 +222,7 @@
 
 (deftest text.leaf-node
     (let ((c1 (make-text "data")))
-      (assert-equal 0 (count-children-if #'identity c1))
+      (assert-equal 0 (child-count c1))
       (expect-condition (nth-child 0 c1) error)
       (assert-equal nil (parent c1))
       (let ((e (make-element "test")))
@@ -227,7 +230,7 @@
 	(assert-equal e (parent c1))
 	(assert-equal c1 (nth-child 0 e))
 	(delete-child c1 e)
-	(assert-equal 0 (count-children-if #'identity e)))
+	(assert-equal 0 (child-count e)))
       (values)))
 
 
@@ -282,7 +285,7 @@
 
 (deftest comment.leaf-node
     (let ((c1 (make-comment "data")))
-      (assert-equal 0 (count-children-if #'identity c1))
+      (assert-equal 0 (child-count c1))
       (expect-condition (nth-child 0 c1) error)
       (assert-equal nil (parent c1))
       (let ((e (make-element "test")))
@@ -290,7 +293,7 @@
 	(assert-equal e (parent c1))
 	(assert-equal c1 (nth-child 0 e))
 	(delete-child c1 e)
-	(assert-equal 0 (count-children-if #'identity e)))
+	(assert-equal 0 (child-count e)))
       (values)))
 
 (deftest comment.document
@@ -392,7 +395,7 @@
 
 (deftest pi.leaf-node
     (let ((c1 (make-processing-instruction "target" "data")))
-      (assert-equal 0 (count-children-if #'identity c1))
+      (assert-equal 0 (child-count c1))
       (expect-condition (nth-child 0 c1) error)
       (assert-equal nil (parent c1))
       (let ((e (make-element "test")))
@@ -400,7 +403,7 @@
 	(assert-equal e (parent c1))
 	(assert-equal c1 (nth-child 0 e))
 	(delete-child c1 e)
-	(assert-equal 0 (count-children-if #'identity e)))
+	(assert-equal 0 (child-count e)))
       (values)))
 
 ;;; zzz das pruefen wir nicht
@@ -482,17 +485,17 @@
 	   (document (make-document root))
 	   (new-root (make-element "new-root")))
       (assert-equal root (document-element document))
-      (assert-equal 1 (count-children-if #'identity document))
+      (assert-equal 1 (child-count document))
       ;; change root
       (setf (document-element document) new-root)
       (assert-equal new-root (document-element document))
-      (assert-equal 1 (count-children-if #'identity document))
+      (assert-equal 1 (child-count document))
       ;; append comment
       (append-child document (make-comment "test"))
-      (assert-equal 2 (count-children-if #'identity document))
+      (assert-equal 2 (child-count document))
       ;; prepend comment
       (prepend-child document (make-comment "prolog comment"))
-      (assert-equal 3 (count-children-if #'identity document))
+      (assert-equal 3 (child-count document))
       (check-type (nth-child 0 document) comment)
       (check-type (nth-child 1 document) element)
       (check-type (nth-child 2 document) comment)
@@ -772,7 +775,7 @@
 	   (document (make-document root))
 	   (new-root (make-element "new-root")))
       ;; change
-      (replace-child document new-root root)
+      (replace-child document root new-root)
       (assert-equal (document-element document) new-root)
       (assert-equal nil (parent root))
       (expect-condition (setf (document-element document) nil) type-error)
@@ -805,7 +808,7 @@
 	   (new (make-document-type "new"))
 	   (old (make-document-type "old")))
       (setf (document-type document) old)
-      (replace-child document new old)
+      (replace-child document old new)
       (assert-equal new (document-type document))
       (assert-equal nil (parent old))
       (assert-equal document (parent new))
@@ -830,7 +833,7 @@
     (let* ((root (make-element "root"))
 	   (document (make-document root))
 	   (comment (make-comment "c")))
-      (expect-condition (replace-child document comment root) stp-error)
+      (expect-condition (replace-child document root comment) stp-error)
       (assert-equal root (document-element document))
       (assert-equal document (parent root))
       (assert-equal nil (parent comment))
@@ -841,7 +844,7 @@
 	   (comment (make-comment "not a doctype"))
 	   (doctype (make-document-type "new")))
       (prepend-child document comment)
-      (replace-child document doctype comment)
+      (replace-child document comment doctype)
       (assert-equal doctype (document-type document))
       (assert-equal document (parent doctype))
       (assert-equal nil (parent comment))
@@ -893,11 +896,11 @@
 			stp-error)
       (append-child document (make-comment "test"))
       (delete-child-if #'identity document :start 1 :count 1)
-      (assert-equal 1 (count-children-if #'identity document))
+      (assert-equal 1 (child-count document))
       (let ((test (make-comment "test")))
 	(append-child document test)
 	(delete-child test document)
-	(assert-equal 1 (count-children-if #'identity document)))
+	(assert-equal 1 (child-count document)))
       (delete-child (make-comment "sd") document)
       (expect-condition
        (delete-child-if #'identity document :start 20 :count 1)
@@ -1686,7 +1689,7 @@
 
 (deftest attribute.count-children
     (with-attribute-test ()
-      (count-children-if (constantly t) a1))
+      (child-count a1))
   0)
 
 (define-condition-test attribute.nth-child
@@ -1711,7 +1714,7 @@
       (expect-condition (setf (local-name a) "pre:a") stp-error)
       (values)))
 
-(deftest attribute.setf.local-name
+(deftest attribute.setf.local-name.2
     (let ((a (make-attribute "value" "pre:name" "http://www.example.org")))
       (setf (local-name a) "newname")
       (assert-equal "newname" (local-name a))
@@ -1958,6 +1961,239 @@
       (let ((copy (copy element)))
 	(add-attribute copy (make-attribute "newvalue" "a"))
 	(assert-equal 1 (length (list-attributes copy))))
+      (values)))
+
+
+;;;; PARENT-NODE
+
+(defmacro with-parent-node-test ((&optional) &body body)
+  `(let* ((empty (make-element "empty"))
+	  (not-empty (make-element "not-empty"))
+	  (child (make-comment "Hello")))
+     (append-child not-empty child)
+     ,@body))
+
+(deftest parent-node.detach
+    (with-parent-node-test ()
+      (let ((text (make-text "This will be attached then detached")))
+	(append-child empty text)
+	(assert-equal empty (parent text))
+	(detach text)
+	(assert-equal nil (parent text))
+	(values))))
+
+(deftest parent-node.append-child
+    (with-parent-node-test ()
+      (let ((child (make-element "test")))
+	(append-child empty child)
+	(assert-equal (parent child) empty)
+	(assert-equal (list-children empty) (list child))
+	(detach child)
+	(append-child not-empty child)
+	(assert (not (eql (nth-child 0 not-empty) child)))
+	(assert-equal (nth-child 1 not-empty) child)
+	(values))))
+
+(define-condition-test parent-node.append-child.2
+    (let ((child (make-element "test")))
+      (append-child child child))
+  stp-error)
+
+(deftest parent-node.append-child.3
+    (let ((a (make-element "test"))
+	  (b (make-element "test")))
+      (append-child a b)
+      (expect-condition (append-child b a) stp-error)
+      (values)))
+
+(deftest parent-node.insert-child
+    (let ((parent (make-element "parent"))
+	  (child1 (make-element "child"))
+	  (child2 (make-element "child2"))
+	  (child3 (make-element "child3"))
+	  (child4 (make-element "child4"))
+	  (child5 (make-element "child5")))
+      ;; into empty
+      (insert-child parent child1 0)
+      (assert (plusp (child-count parent)))
+      (assert-equal 0 (child-position child1 parent))
+      ;; at beginning
+      (insert-child parent child2 0)
+      (assert-equal 0 (child-position child2 parent))
+      (assert-equal 1 (child-position child1 parent))
+      ;; in middle
+      (insert-child parent child3 1)
+      (assert-equal 0 (child-position child2 parent))
+      (assert-equal 1 (child-position child3 parent))
+      (assert-equal 2 (child-position child1 parent))
+      ;; at beginning with children
+      (insert-child parent child4 0)
+      (assert-equal 0 (child-position child4 parent))
+      (assert-equal 1 (child-position child2 parent))
+      (assert-equal 2 (child-position child3 parent))
+      (assert-equal 3 (child-position child1 parent))
+      ;; at end with children
+      (insert-child parent child5 4)
+      (assert-equal 0 (child-position child4 parent))
+      (assert-equal 1 (child-position child2 parent))
+      (assert-equal 2 (child-position child3 parent))
+      (assert-equal 3 (child-position child1 parent))
+      (assert-equal 4 (child-position child5 parent))
+      ;; nil
+      (expect-condition (insert-child parent nil 0) error)
+      (values)))
+
+(define-condition-test parent-node.append-child.4
+    (with-parent-node-test ()
+      (append-child empty (make-document not-empty)))
+  stp-error)
+
+(define-condition-test parent-node.append-child.5
+    (with-parent-node-test ()
+      (append-child empty child))
+  stp-error)
+
+(deftest parent-node.replace-child
+    (with-parent-node-test ()
+      (let ((old1 (make-element "old1"))
+	    (old2 (make-element "old2"))
+	    (old3 (make-element "old3"))
+	    (new1 (make-element "new1"))
+	    (new2 (make-element "new2"))
+	    (new3 (make-element "new3")))
+	(append-child empty old1)
+	(append-child empty old2)
+	(append-child empty old3)
+	(replace-child empty old1 new1)
+	(replace-child empty old3 new3)
+	(replace-child empty old2 new2)
+	(assert-equal (list new1 new2 new3) (list-children empty))
+	(expect-condition (replace-child empty new1 nil) error)
+	(expect-condition (replace-child empty old1 nil) error)
+	(let ((new4 (make-element "new4")))
+	  (expect-condition (replace-child empty new4 (make-element "test"))
+			    stp-error))
+	(replace-child empty new1 new1)
+	(assert-equal new1 (nth-child 0 empty))
+	(assert-equal empty (parent new1))
+	(expect-condition (replace-child empty new1 new2) stp-error))
+      (values)))
+
+(deftest parent-node.child-position
+    (with-parent-node-test ()
+      (let ((child1 (make-element "old1"))
+	    (child2 (make-text "old2"))
+	    (child3 (make-comment "old3")))
+	(assert-equal nil (child-position child1 empty))
+	(append-child empty child1)
+	(append-child empty child2)
+	(append-child empty child3)
+	(assert-equal 0 (child-position child1 empty))
+	(assert-equal 1 (child-position child2 empty))
+	(assert-equal 2 (child-position child3 empty))
+	(assert-equal nil (child-position empty empty))
+	(assert-equal nil (child-position (make-text "test") empty)))
+      (values)))
+
+(deftest parent-node.nth-child
+    (with-parent-node-test ()
+      (let ((old1 (make-element "old1"))
+	    (old2 (make-element "old2"))
+	    (old3 (make-comment "old3")))
+	(expect-condition (nth-child 0 empty) error)
+	(append-child empty old1)
+	(append-child empty old2)
+	(append-child empty old3)
+	(assert-equal old1 (nth-child 0 empty))
+	(assert-equal old2 (nth-child 1 empty))
+	(assert-equal old3 (nth-child 2 empty))
+	(expect-condition (nth-child 5 empty) error))
+      (values)))
+
+(deftest parent-node.delete-child
+    (with-parent-node-test ()
+      (expect-condition (delete-nth-child 0 empty) error)
+      (let ((old1 (make-element "old1"))
+	    (old2 (make-element "old2"))
+	    (old3 (make-element "old3")))
+	(expect-condition (delete-child old1 empty) error)
+	(append-child empty old1)
+	(append-child empty old2)
+	(append-child empty old3)
+	(delete-nth-child 1 empty)
+	(assert-equal old1 (nth-child 0 empty))
+	(assert-equal old3 (nth-child 1 empty))
+	(delete-nth-child 1 empty)
+	(delete-nth-child 0 empty)
+	(assert-equal nil (parent old2))
+	(assert-equal nil (list-children empty))
+	(append-child empty old1)
+	(append-child empty old2)
+	(append-child empty old3)
+	(assert-equal (list old1 old2 old3) (list-children empty))
+	(delete-child old3 empty)
+	(delete-child old1 empty)
+	(delete-child old2 empty)
+	(assert-equal nil (list-children empty))
+	(assert-equal nil (parent old1)))
+      (values)))
+
+(deftest parent-node.replace-child.2
+    (with-parent-node-test ()
+      (let ((old1 (make-element "old1"))
+	    (old2 (make-element "old2"))
+	    (old3 (make-element "old3"))
+	    (new1 (make-element "new1"))
+	    (new3 (make-element "new3")))
+	(append-child empty old1)
+	(append-child empty old2)
+	(expect-condition (replace-child empty old3 new3) stp-error)
+	(expect-condition (replace-child empty old1 nil) error)
+	(expect-condition (replace-child empty nil new1) error))
+      (values)))
+
+(deftest parent-node.replace-child.3
+    (with-parent-node-test ()
+      (let ((test1 (make-element "test1"))
+	    (test2 (make-element "test2")))
+	(expect-condition (replace-child empty test1 test2) stp-error))
+      (values)))
+
+(deftest parent-node.replace-child.4
+    (with-parent-node-test ()
+      (let ((parent (make-element "parent"))
+	    (test1 (make-element "test1"))
+	    (test2 (make-element "test2")))
+	(append-child parent test1)
+	(append-child parent test2)
+	(expect-condition (replace-child parent test1 test2) stp-error)
+	(assert-equal (list test1 test2) (list-children parent)))
+      (values)))
+
+(deftest parent-node.insert-child.2
+    (with-parent-node-test ()
+      (let ((parent (make-element "parent"))
+	    (test1 (make-element "test1"))
+	    (test2 (make-element "test2")))
+	(append-child parent test1)
+	(append-child parent test2)
+	(expect-condition (insert-child parent test2 0) stp-error)
+	(expect-condition (insert-child parent test2 1) stp-error)
+	(assert-equal (list test1 test2) (list-children parent)))
+      (values)))
+
+(deftest parent-node.replace-child.4
+    (with-parent-node-test ()
+      (let ((parent (make-element "parent"))
+	    (child (make-element "child")))
+	(append-child parent child)
+	(expect-condition
+	 (replace-child parent child (make-document-type "root"))
+	 stp-error)
+	(let ((e (make-element "e"))
+	      (child2 (make-text "child2")))
+	  (append-child e child2)
+	  (expect-condition (replace-child parent child child2) stp-error)))
       (values)))
 
 

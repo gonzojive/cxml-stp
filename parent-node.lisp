@@ -103,8 +103,9 @@
    @arg[parent]{a @class{parent-node}}
    Removes child @code{idx} of @code{parent}, if allowed."
   (let ((old (%children parent)))
-    (delete-child-if (constantly t) parent :start idx :count 1)
-    (elt old idx)))
+    (prog1
+	(elt old idx)
+      (delete-child-if (constantly t) parent :start idx :count 1))))
 
 (defun delete-child (child parent &key from-end test start end count key)
   "@arg[child]{an object}
@@ -155,24 +156,6 @@
       (stp-error "referenced child not found: ~A" ref-child))
     (insert-child parent new-child (1+ idx))))
 
-(defun replace-child (parent new-child old-child)
-  "@arg[parent]{a @class{parent-node}}
-   @arg[new-child]{a @class{node}}
-   @arg[old-child]{a @class{node}}
-   @short{Adds @code{new-child} instead of @code{old-child} as a child node of
-   @code{parent}, if allowed.}
-
-   Signals an error if the new child already has a parent.
-
-   Also signals an error if @code{old-child} is not a child of @code{parent}."
-  (let ((idx (child-position old-child parent)))
-    (unless idx
-      (stp-error "old child not found: ~A" old-child))
-    (replace-children parent
-		      (list new-child)
-		      :start1 idx
-		      :end1 (1+ idx))))
-
 ;;; CHILDREN-related functions we define
 
 (defgeneric insert-child (parent child position)
@@ -202,24 +185,37 @@
     Searches for an child node of @code{parent} that satisfies @code{predicate}
     and removes it, if allowed."))
 
-(defgeneric replace-children (parent seq &key start1 end1 start2 end2)
+(defgeneric replace-child (parent old-child new-child)
   (:documentation
-   "@arg[parent]{a @class{node}}
-    @arg[seq]{a sequence of @class{node}s}
-    @arg[start1, end1]{bounding index designators for @code{parent}'s child list}
-    @arg[start2, end2]{bounding index designators for @code{seq}}
-    Modifies the child list of @code{parent} by replacing its child nodes
-    bounded by @code{start1} and @code{end1} with the elements of
-    @code{seq} bounded by @code{start2} and @code{end2}, if allowed."))
+   "@arg[parent]{a @class{parent-node}}
+    @arg[old-child]{a @class{node}}
+    @arg[new-child]{a @class{node}}
+    @short{Adds @code{new-child} instead of @code{old-child} as a child node of
+    @code{parent}, if allowed.}
+
+    Signals an error if the new child already has a parent.
+
+    Also signals an error if @code{old-child} is not a child of
+    @code{parent}."))
 
 (defgeneric check-insertion-allowed (parent child position))
 (defgeneric check-deletion-allowed (parent child position))
-(defgeneric check-replacement-allowed (parent children))
 
 (defmethod insert-child ((parent parent-node) (child node) i)
   (check-insertion-allowed parent child i)
   (%unchecked-insert-child parent child i)
   (setf (%parent child) parent))
+
+(defmethod replace-child ((parent parent-node) old-child new-child)
+  (check-type old-child node)
+  (check-type new-child node)
+  (let ((idx (child-position old-child parent)))
+    (unless idx
+      (stp-error "old child not found: ~A" old-child))
+    (unless (eql old-child new-child)
+      (check-insertion-allowed parent new-child idx)
+      (delete-nth-child idx parent)
+      (%unchecked-insert-child parent new-child idx))))
 
 (defun %unchecked-insert-child (parent child i)
   (unless (%children parent)
@@ -282,55 +278,6 @@
 		   (incf i))))
 	      (decf tbd)))))
     result))
-
-;; zzz geht das nicht besser?
-(defmethod replace-children
-    ((parent parent-node) seq &key start1 end1 start2 end2)
-  (setf start1 (or start1 0))
-  (setf start2 (or start2 0))
-  (setf end1 (or end1 (length (%children parent))))
-  (setf end2 (or end2 (length seq)))
-  (let ((old (%children parent)))
-    (unless (and (<= 0 start1 (length old))
-		 (<= end1 (length old))
-		 (<= start1 end1))
-      (error "invalid bounding index designators"))
-    (let* ((new (if old
-		    (replace (alexandria:copy-array old)
-			     seq
-			     :start1 start1
-			     :end1 end1
-			     :start2 start2
-			     :end2 end2)
-		    (make-array (length seq)
-				:fill-pointer (length seq)
-				:adjustable t
-				:initial-contents seq)))
-	   (new-list (coerce new 'list)))
-      (unless (equal new-list (remove-duplicates new-list))
-	(stp-error "duplicate children after replacement"))
-      (loop
-	 for i from start2 below end2
-	 for winner = (elt seq i)
-	 for p = (parent winner)
-	 do
-	   (when (and p (not (eq p parent)))
-	     (stp-error "node already has a parent: ~A" winner)))
-      (check-replacement-allowed parent new)
-      (setf (%children parent) new)
-      (loop
-	 for i from start1 below end1
-	 for loser = (elt old i)
-	 do
-	 (unless (find loser seq :start start2 :end end2)
-	   (maybe-fill-in-base-uri loser)
-	   (setf (%parent loser) nil)))
-      (loop
-	 for i from start2 below end2
-	 for winner = (elt seq i)
-	 do
-	   (setf (%parent winner) parent))))
-  t)
 
 (defreader parent-node ((base-uri "") (children nil))
   (setf (%base-uri this) base-uri)

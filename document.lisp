@@ -83,29 +83,16 @@
 (defmethod check-deletion-allowed ((parent document) (child element) i)
   (stp-error "attempt to remove document element"))
 
-(defmethod check-replacement-allowed ((parent document) children)
-  (let ((dt nil)
-	(de nil))
-    (loop
-       for i from 0
-       for c across children
-       do
-	 (typecase c
-	   ((or comment processing-instruction))
-	   (element
-	    (when de
-	      (stp-error "attempt to insert multiple document elements"))
-	    (setf de i))
-	   (document-type
-	    (when dt
-	      (stp-error "attempt to insert multiple document types"))
-	    (setf dt i))
-	   (t
-	    (stp-error "not a valid child of a document: ~A" c))))
-    (unless de
-      (stp-error "attempt to remove document element"))
-    (when (and dt (> dt de))
-      (stp-error "attempt to insert document type after document element"))))
+(defmethod replace-child ((parent document) old-child new-child)
+  (cond
+    ((and (eq old-child (document-element parent))
+	  (typep new-child 'element))
+      (setf (document-element parent) new-child))
+    ((and (eq old-child (stp:document-type parent))
+	  (typep new-child 'document-type))
+      (setf (stp:document-type parent) new-child))
+    (t
+      (call-next-method))))
 
 (defun cxml-stp:document-type (document)
   "@arg[document]{a @class{document}}

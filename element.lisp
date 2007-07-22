@@ -435,29 +435,23 @@
 
 (defmethod check-deletion-allowed ((parent element) (child node) i))
 
-(defmethod check-replacement-allowed ((parent element) children)
-  (map nil
-       (lambda (x)
-	 (check-insertion-allowed parent x :dummy))
-       children))
-
-;; trivial optimization
-(defmethod replace-children
-    ((parent element) seq &key start1 end1 start2 end2)
-  (setf start1 (or start1 0))
-  (setf start2 (or start2 0))
-  (setf end1 (or end1 (length (%children parent))))
-  (setf end2 (or end2 (length seq)))
-  (cond
-    ((and (eql (- start1 end1) (length (%children parent)))
-	  (eql start2 end2))
-      (do-children (loser parent)
-	(fill-in-base-uri loser)
-	(setf (%parent loser) nil))
-      (setf (fill-pointer (%children parent)) 0))
-    (t
-     (call-next-method)))
-  t)
+;; ;; trivial optimization
+;; (defmethod replace-children
+;;     ((parent element) seq &key start1 end1 start2 end2)
+;;   (setf start1 (or start1 0))
+;;   (setf start2 (or start2 0))
+;;   (setf end1 (or end1 (length (%children parent))))
+;;   (setf end2 (or end2 (length seq)))
+;;   (cond
+;;     ((and (eql (- start1 end1) (length (%children parent)))
+;; 	  (eql start2 end2))
+;;       (do-children (loser parent)
+;; 	(fill-in-base-uri loser)
+;; 	(setf (%parent loser) nil))
+;;       (setf (fill-pointer (%children parent)) 0))
+;;     (t
+;;      (call-next-method)))
+;;   t)
 
 (defun add-extra-namespace (element prefix uri)
   "@arg[prefix]{string, an NCName}
