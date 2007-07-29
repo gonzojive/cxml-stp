@@ -267,8 +267,8 @@
    @arg[test]{a designator for a function of two arguments, or nil}
    @return{a non-negative integer less than or equal to the number of
      child nodes}
-   Counts and returns the number child @code{parent}'s nodes satisfying the
-   test.
+   Counts (and returns the number of) @code{parent}'s child nodes satisfying
+   the test.
    @see{count-children-if}"
   (declare (ignore from-end start end key test))
   (apply #'count value (%children parent) args))
@@ -283,7 +283,7 @@
    @arg[key]{a designator for a function of one argument, or nil}
    @return{a non-negative integer less than or equal to the number of
      child nodes}
-   Counts and returns the number child @code{parent}'s nodes satisfying
+   Counts (and returns the number of) @code{parent}'s child nodes satisfying
    @code{predicate}.
    @see{count-children}"
   (declare (ignore from-end start end key))
@@ -298,7 +298,7 @@
    @arg[key]{a designator for a function of one argument, or nil}
    @arg[test]{a designator for a function of two arguments, or nil}
    @return{a @class{node} or nil}
-   Searches for an child node of @code{parent} that satisfies the @code{test}
+   Searches for a child node of @code{parent} that satisfies the @code{test}
    and returns it.
 
    @see{find-child-if}"
@@ -314,7 +314,7 @@
    @arg[start, end]{bounding index designators for @code{parent}'s child list}
    @arg[key]{a designator for a function of one argument, or nil}
    @return{a @class{node} or nil}
-   Searches for an child node of @code{parent} that satisfies @code{predicate}
+   Searches for a child node of @code{parent} that satisfies @code{predicate}
    and returns it.
 
    @see{find-child}"
@@ -330,7 +330,7 @@
    @arg[key]{a designator for a function of one argument, or nil}
    @arg[test]{a designator for a function of two arguments, or nil}
    @return{a @class{node} or nil}
-   Searches for an child node of @code{parent} that satisfies the @code{test}
+   Searches for a child node of @code{parent} that satisfies the @code{test}
    and returns its position.
 
    @see{child-position-if}"
@@ -347,7 +347,7 @@
    @arg[key]{a designator for a function of one argument, or nil}
    @arg[test]{a designator for a function of two arguments, or nil}
    @return{a @class{node} or nil}
-   Searches for an child node of @code{parent} that satisfies the @code{test}
+   Searches for a child node of @code{parent} that satisfies the @code{test}
    and returns its position.
 
    @see{child-position}"

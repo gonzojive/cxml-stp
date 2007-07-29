@@ -105,7 +105,7 @@
 	  (%attributes old)))
 
 (defun of-name (name &optional (uri ""))
-  "@arg[name]{a string, either a QName or an NCName}
+  "@arg[name]{an NCName string or @code{nil}}
    @arg[uri]{a string, the namespace URI}
    @return{an function of one argument}
    @short{This function creates a test function for nodes of this name.}
@@ -124,6 +124,32 @@
     (and (typep x '(or attribute element))
 	 (or (null name) (equal (local-name x) name))
 	 (equal (namespace-uri x) uri))))
+
+(defun qualified-of-name (qname element)
+  "@arg[qname]{string, a QName}
+   @arg[element]{an element in which to look up @code{name}'s namespace}
+   @return{an function of one argument}
+   @short{This function creates a test function for nodes of this name.}
+
+   @code{qname}'s namespace prefix is resolved into its namespace URI
+   as declared by @code{element}.  If @code{qname} does not have a prefix,
+   the namespace URI is the empty string.  If @code{qname}'s prefix is
+   not declared on @code{element}, an error is signalled.
+
+   A function is returned that will return T if the argument is an instance
+   of @class{attribute} or @class{element} and has the local-name
+   namespace URI specified by @code{qname}, and will return NIL otherwise.
+
+   @see{qualified-name}
+   @see{local-name}
+   @see{find-namespace}
+   @see{namespace-uri}"
+  (multiple-value-bind (prefix local-name)
+      (cxml::split-qname qname)
+    (let ((uri (find-namespace prefix element)))
+      (unless uri
+	(stp-error "namespace ~A not declared on ~A" prefix element))
+      (of-name local-name uri))))
 
 (defun map-extra-namespaces (fn element)
   "@arg[fn]{a designator for a function of two arguments}
