@@ -1,5 +1,5 @@
 #!/bin/sh
-cd $(dirname $0)
+cd $(dirname $0)/..
 home=$(pwd)
 name=$(basename $home)
 dir=${name}-$(date --iso)
@@ -25,4 +25,4 @@ tgz=$TMPDIR/${dir}.tgz
 tar czf $tgz $dir
 gpg -b -a $tgz
 
-mv $tgz $home
+mv $tgz $home/build/
