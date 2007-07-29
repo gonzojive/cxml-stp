@@ -11,7 +11,7 @@ cleanup() {
 }
 trap cleanup exit
 
-sbcl --load atdoc.lisp --eval '(quit)'
+sbcl --load build/atdoc.lisp --eval '(quit)'
 
 cd $TMPDIR
 git clone $home $dir
