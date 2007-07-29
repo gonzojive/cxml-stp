@@ -2718,6 +2718,74 @@
 			 :end nil))
   1)
 
+;;;; FIXME: find-child-if, child-position, filter-children
+
+(deftest node.map-recursively.1
+    (let* ((root (make-element "foo"))
+	   (child (make-element "bar"))
+	   (text (make-text "bla"))
+	   (document (make-document root)))
+      (setf (attribute-value child "ignoreme") "value")
+      (append-child root child)
+      (append-child root text)
+      (assert-equal
+       (let ((seen nil))
+	 (map-recursively (lambda (x) (push x seen)) document)
+	 (nreverse seen))
+       (list document root child text))
+      (values)))
+
+(deftest node.do-recursively.1
+    (let* ((root (make-element "foo"))
+	   (child (make-element "bar"))
+	   (text (make-text "bla"))
+	   (document (make-document root)))
+      (setf (attribute-value child "ignoreme") "value")
+      (append-child root child)
+      (append-child root text)
+      (assert-equal
+       (let ((seen nil))
+	 (do-recursively (x document (nreverse seen))
+	   (push x seen)))
+       (list document root child text))
+      (values)))
+
+(deftest node.find-recursively.1
+    (let* ((root (make-element "foo"))
+	   (child (make-element "bar"))
+	   (text (make-text "bla"))
+	   (document (make-document root)))
+      (setf (attribute-value child "ignoreme") "value")
+      (append-child root child)
+      (append-child root text)
+      (assert-equal (find-recursively 'text document :key #'type-of)
+		    text)
+      (assert-equal (find-recursively "element"
+				      document
+				      :test 'string-equal
+				      :key #'type-of)
+		    root)
+      (values)))
+
+(deftest node.filter-recursively.1
+    (let* ((root (make-element "foo"))
+	   (child (make-element "bar"))
+	   (text (make-text "bla"))
+	   (document (make-document root)))
+      (setf (attribute-value child "ignoreme") "value")
+      (append-child root child)
+      (append-child root text)
+      (assert-equal (filter-recursively (lambda (x) (eq x 'text))
+					document
+					:key #'type-of)
+		    (list text))
+      (assert-equal (filter-recursively (lambda (x) (string-equal x "element"))
+					document
+					:key #'type-of)
+		    (list root child))
+      (values)))
+
+
 ;;;; BUILDER
 
 ;;;; the XML Test suite is a good test for the builder, so we need only few

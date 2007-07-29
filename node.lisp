@@ -379,10 +379,9 @@
    @return{nil}
    Applies @code{fn} to successive descendants of @code{node} in
    pre-order."
+  (funcall fn node)
   (map nil
-       (lambda (c)
-	 (funcall fn c)
-	 (map-recursively fn c))
+       (lambda (c) (map-recursively fn c))
        (%children node)))
 
 (defmacro do-recursively ((var node &optional result) &body body)
@@ -409,7 +408,7 @@
 
    @see{find-child-if}"
   (setf key (or key #'identity))
-  (setf test (or key #'eql))
+  (setf test (or test #'eql))
   (do-recursively (child node)
     (when (funcall test item (funcall key child))
       (return child))))
@@ -424,7 +423,7 @@
    Return a list of descendant nodes of @code{node} in pre-order, from which
    nodes that do not satisfy @code{predicate} have been removed."
   (setf key (or key #'identity))
-  (setf test (or key #'eql))
+  (setf test (or test #'eql))
   (let ((result '()))
     (do-recursively (child node)
       (when (funcall test (funcall key child))
