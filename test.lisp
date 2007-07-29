@@ -95,16 +95,17 @@
 (defmethod node= ((e element) (f element))
   (and (named-node-= e f)
        (parent-node-= e f)
-       (every #'node=
-	      (sort (list-attributes e) #'string< :key #'qualified-name)
-	      (sort (list-attributes f) #'string< :key #'qualified-name))
+       (null
+	(set-exclusive-or (list-attributes e) (list-attributes f)
+			  :test #'node=))
        (flet ((collect-namespaces (elt)
 		(let ((result ()))
 		  (map-extra-namespaces (lambda (k v) (push (cons k v) result))
 					elt)
 		  result)))
 	 (null
-	  (set-exclusive-or (collect-namespaces e) (collect-namespaces f))))))
+	  (set-exclusive-or (collect-namespaces e) (collect-namespaces f)
+			    :test #'equal)))))
 
 (defmethod node= ((a node) (b node))
   nil)
@@ -233,6 +234,11 @@
 	(assert-equal 0 (child-count e)))
       (values)))
 
+(deftest text.print-object
+    (let ((n (make-text "heyho")))
+      (assert-node= n (read-from-string (write-to-string n)))
+      (values)))
+
 
 ;;;; COMMENT
 
@@ -314,6 +320,11 @@
 (define-condition-test comment.only-char-allowed
     (make-comment (format nil " ~C " (code-char 1)))
   stp-error)
+
+(deftest comment.print-object
+    (let ((n (make-comment "heyho")))
+      (assert-node= n (read-from-string (write-to-string n)))
+      (values)))
 
 
 ;;;; PROCESSING-INSTRUCTION
@@ -428,6 +439,11 @@
     (dolist (str (list "pre:target" "pre:" ":target")
 	     (values))
       (expect-condition (make-processing-instruction str "data") stp-error)))
+
+(deftest pi.print-object
+    (let ((n (make-processing-instruction "target" "data")))
+      (assert-node= n (read-from-string (write-to-string n)))
+      (values)))
 
 
 ;;;; DOCUMENT-TYPE
@@ -697,6 +713,35 @@
       (assert-equal nil (system-id doctype))
       (values)))
 
+(deftest doctype.print-object
+    (let* ((name "Ottokar")
+	   (sysid "http://www.w3.org/TR/some.dtd")
+	   (pubid "-//Me//some public ID")
+	   (n (make-document-type name sysid pubid)))
+      (assert-node= n (read-from-string (write-to-string n)))
+      (values)))
+
+(deftest doctype.setf.public-id.nil
+    (let* ((name "Ottokar")
+	   (sysid "http://www.w3.org/TR/some.dtd")
+	   (pubid "-//Me//some public ID")
+	   (n (make-document-type name sysid pubid)))
+      (setf (public-id n) "")
+      (assert-equal sysid (system-id n))
+      (assert-equal nil (public-id n))
+      (values)))
+
+(deftest doctype.setf.system-id.nil
+    (let* ((name "Ottokar")
+	   (sysid "http://www.w3.org/TR/some.dtd")
+	   (pubid "-//Me//some public ID")
+	   (n (make-document-type name sysid pubid)))
+      (setf (public-id n) nil)
+      (assert-equal sysid (system-id n))
+      (setf (system-id n) "")
+      (assert-equal nil (system-id n))
+      (values)))
+
 
 ;;;; DOCUMENT
 
@@ -864,6 +909,11 @@
       (assert-equal document (document document))
       (values)))
 
+(deftest document.root
+    (let ((document (make-document (make-element "root"))))
+      (assert-equal document (root document))
+      (values)))
+
 (deftest document.copy
     (let* ((root (make-element "root"))
 	   (document (make-document root)))
@@ -914,6 +964,11 @@
   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <root/>")
 
+(deftest document.print-object
+    (let ((n (make-document (make-element "root"))))
+      (assert-node= n (read-from-string (write-to-string n)))
+      (values)))
+
 
 ;;;; ELEMENT
 
@@ -950,7 +1005,7 @@
 		    (find-child-if (of-name "test" "http://www.example.com")
 				   element))
       (assert-equal nil (find-child-if (of-name "none") element))
-      (assert-equal nil (find-child-if (of-name "pre:test") element))
+      (expect-condition (of-name "pre:test") stp-error)
       (assert-equal nil
 		    (find-child-if (of-name "none" "http://www.example.com")
 				   element))
@@ -1321,6 +1376,19 @@
       (assert-equal "mauve" (namespace-prefix element))
       (values)))
 
+(deftest element.setf.namespace-prefix.2
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (setf (namespace-prefix element) nil)
+      (assert-equal "" (namespace-prefix element))
+      (values)))
+
+(deftest element.setf.namespace-prefix.3
+    (let ((element (make-element "sakjdhjhd")))
+      (expect-condition (setf (namespace-prefix element) "foo") stp-error)
+      (values)))
+
 (deftest element.add-extra-namespace
     (let* ((name "red:sakjdhjhd")
 	   (uri "http://www.red.com/")
@@ -1333,6 +1401,39 @@
 	(remove-extra-namespace element "prefix")
 	(expect-condition (add-extra-namespace element "prefix" illegal)
 			  stp-error))
+      (values)))
+
+(deftest element.add-extra-namespace.2
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (add-extra-namespace element "xmlns" "")
+      (remove-extra-namespace element "xmlns")
+      (expect-condition 
+       (add-extra-namespace element "xmlns" "http://foo")
+       stp-error)
+      (values)))
+
+(deftest element.add-extra-namespace.3
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (add-extra-namespace element
+			   "xml"
+			   "http://www.w3.org/XML/1998/namespace")
+      (remove-extra-namespace element "xml")
+      (expect-condition 
+       (add-extra-namespace element
+			    "foo"
+			    "http://www.w3.org/XML/1998/namespace")
+       stp-error)
+      (values)))
+
+(deftest element.add-extra-namespace.4
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (expect-condition (add-extra-namespace element "foo" "hoppla") warning)
       (values)))
 
 (deftest element.insert-child.nil
@@ -1457,6 +1558,13 @@
       (assert-equal "http://www.w3.org/TR/1999/xlink"
 		    (find-namespace "xlink" element))
       (assert-equal "http://www.example.com" (find-namespace "pre" element))
+      (values)))
+
+(deftest element.add-attribute.3
+    (let ((element (make-element "pre:name" "http://www.example.com")))
+      (expect-condition
+       (setf (attribute-value element "pre:a" "http://different") "value")
+       stp-error)
       (values)))
 
 (deftest element.triple
@@ -1616,11 +1724,52 @@
       (assert-equal
        "http://www.example.com/"
        (attribute-value e "base" "http://www.w3.org/XML/1998/namespace"))
-      (assert-equal nil (attribute-value e "xml:base"))
+      ;; (assert-equal nil (attribute-value e "xml:base"))
       (assert-equal nil (attribute-value e "base"))
       (assert-equal
        nil
        (attribute-value e "test" "http://www.w3.org/XML/1998/namespace"))
+      (values)))
+
+(deftest element.setf.attribute-value
+    (let* ((e (make-element "sakjdhjhd"))
+	   (f (copy e))
+	   (g (copy e)))
+      (add-attribute f (make-attribute "1" "pre:foo" "http://pre"))
+      (add-attribute g (make-attribute "2" "pre:foo" "http://pre"))
+      ;; add attribute
+      (setf (attribute-value e "pre:foo" "http://pre") "1")
+      (assert-node= e f)
+      ;; change existing attribute
+      (setf (attribute-value e "pre:foo" "http://pre") "2")
+      (assert-node= e g)
+      (values)))
+
+(deftest element.map-attributes
+    (let* ((e (make-element "sakjdhjhd")))
+      (add-attribute e (make-attribute "1" "pre:foo" "http://pre"))
+      (add-attribute e (make-attribute "2" "pre:bar" "http://pre"))
+      (assert-equal (list-attributes e) (map-attributes 'list #'identity e))
+      (assert-equal (mapcar #'qualified-name (list-attributes e))
+		    (map-attributes 'list #'qualified-name e))
+      (assert (equalp (map 'vector #'qualified-name (list-attributes e))
+		      (map-attributes 'vector #'qualified-name e)))
+      (values)))
+
+(deftest element.with-attributes
+    (let* ((e (make-element "sakjdhjhd")))
+      (add-attribute e (make-attribute "1" "pre:foo" "http://pre"))
+      (add-attribute e (make-attribute "2" "bar"))
+      (with-attributes ((foo "pre:foo" "http://pre")
+			(bar "bar")
+			(baz "pre:baz"  "http://pre"))
+	  e
+	(setf foo (format nil "<~A>" foo))
+	(setf bar (string #\newline))
+	(setf baz "pre:xyz"))
+      (assert-equal (attribute-value e "foo" "http://pre") "<1>")
+      (assert-equal (attribute-value e "bar") (string #\newline))
+      (assert-equal (attribute-value e "baz" "http://pre") "pre:xyz")
       (values)))
 
 (deftest element.find-attribute-named
@@ -1644,6 +1793,14 @@
 			       "base"
 			       "http://www.w3.org/XML/1998/namespace")))
       (values)))
+
+(deftest element.find-namespace.empty.1
+    (find-namespace "" (make-element "sakjdhjhd"))
+  "")
+
+(deftest element.find-namespace.empty.2
+    (find-namespace nil (make-element "sakjdhjhd"))
+  "")
 
 (deftest element.namespace-prefix.1
     (namespace-prefix (make-element "html"))
@@ -1678,6 +1835,80 @@
 (define-condition-test element.name.3
     (make-element nil)
   type-error)
+
+(deftest element.print-object
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (base-uri "http://www.example.com/")
+	   (e (make-element name uri)))
+      (add-extra-namespace e "blue" "http://www.blue.com")
+      (add-extra-namespace e "green" "http://www.green.com")
+      (let ((a1 (make-attribute "test" "test"))
+	    (a2 (make-attribute "data" "pre1:green" "http://www.green.com"))
+	    (a3 (make-attribute "data"
+				"yellow:sfsdadf"
+				"http://www.yellow.com/")))
+	(add-attribute e a1)
+	(add-attribute e a2)
+	(add-attribute e a3))
+      (append-child e (make-element "mv:child" "http://www.mauve.com"))
+      (let ((e3 (make-element "mv:child" "http://www.mauve.com")))
+	(prepend-child e e3)
+	(append-child e3 (make-element "mv:child" "http://www.mauve.com")))
+      (setf (base-uri e) base-uri)
+      (assert-node= e (read-from-string (write-to-string e)))
+      (values)))
+
+(deftest element.map-extra-namespaces
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (blue "http://www.blue.com")
+	   (green "http://www.green.com")
+	   (e (make-element name uri)))
+      (add-extra-namespace e "blue" blue)
+      (add-extra-namespace e "green" green)
+      (setf (attribute-value e "pre1:green" green) "data")
+      (let ((bluep nil)
+	    (greenp nil))
+	(map-extra-namespaces
+	 (lambda (prefix uri)
+	   (cond
+	     ((equal prefix "blue")
+	      (assert (not bluep))
+	      (setf bluep t)
+	      (assert-equal uri blue))
+	     ((equal prefix "green")
+	      (assert (not greenp))
+	      (setf greenp t)
+	      (assert-equal uri green))
+	     (t
+	      (error "bogus namespace"))))
+	 e))
+      (values)))
+
+(deftest element.base-uri
+    (let* ((root (make-element "root"))
+	   (child (make-element "child"))
+	   (document (make-document root)))
+      (append-child root child)
+      (assert-equal (base-uri document) "")
+      (setf (base-uri root) "file://etc")
+      (setf (base-uri child) "passwd")
+      (assert (puri:uri= (puri:parse-uri "file://etc/passwd")
+			 (base-uri child)))
+      (values)))
+
+(deftest element.root
+    (let* ((de (make-element "root"))
+	   (child (make-element "child")))
+      (append-child de child)
+      (assert-equal de (root child))
+      (assert-equal de (root de))
+      (let ((document (make-document de)))
+	(assert-equal document (root de))
+	(assert-equal document (root child))
+	(assert-equal document (root document)))
+      (values)))
 
 
 ;;;; ATTRIBUTE
@@ -1902,6 +2133,16 @@
 			stp-error)
       (values)))
 
+(deftest attribute.rename-attribute.5
+    (let ((element (make-element "test"))
+	  (a (make-attribute "bar" "pre:foo" "http://pre.com"))
+	  (b (make-attribute "bar" "post:bar" "http://post.com")))
+      (add-attribute element a)
+      (add-attribute element b)
+      (expect-condition (rename-attribute b "pre" "http://post.com")
+			stp-error)
+      (values)))
+
 (deftest attribute.node-properties
     (let ((a (make-attribute "data" "test")))
       (assert-equal nil (parent a))
@@ -1961,6 +2202,19 @@
       (let ((copy (copy element)))
 	(add-attribute copy (make-attribute "newvalue" "a"))
 	(assert-equal 1 (length (list-attributes copy))))
+      (values)))
+
+(deftest attribute.string-value
+    (string-value (make-attribute "bar" "foo"))
+  "bar")
+
+(define-condition-test attribute.serialize
+    (serialize (make-attribute "bar" "foo") nil)
+  stp-error)
+
+(deftest attribute.print-object
+    (let ((a (make-attribute "bar" "pre:foo" "http://uri")))
+      (assert-node= a (read-from-string (write-to-string a)))
       (values)))
 
 
@@ -2195,6 +2449,286 @@
 	  (append-child e child2)
 	  (expect-condition (replace-child parent child child2) stp-error)))
       (values)))
+
+
+;;;; NODE
+
+(deftest node.first-child.1
+    (let ((parent (make-element "parent"))
+	  (a (make-element "child"))
+	  (b (make-text "text")))
+      (assert-equal nil (first-child parent))
+      (append-child parent a)
+      (append-child parent b)
+      (assert-equal a (first-child parent))
+      (detach a)
+      (detach b)
+      (assert-equal nil (first-child parent))
+      (values)))
+
+(deftest node.last-child.1
+    (let ((parent (make-element "parent"))
+	  (a (make-element "child"))
+	  (b (make-text "text")))
+      (assert-equal nil (last-child parent))
+      (append-child parent a)
+      (append-child parent b)
+      (assert-equal b (last-child parent))
+      (detach a)
+      (detach b)
+      (assert-equal nil (last-child parent))
+      (values)))
+
+(deftest node.previous-sibling.1
+    (let ((parent (make-element "parent"))
+	  (a (make-element "child"))
+	  (b (make-text "text")))
+      (expect-condition (previous-sibling a) stp-error)
+      (expect-condition (previous-sibling b) stp-error)
+      (append-child parent a)
+      (append-child parent b)
+      (expect-condition (previous-sibling a) stp-error)
+      (assert-equal a (previous-sibling b))
+      (values)))
+
+(deftest node.next-sibling.1
+    (let ((parent (make-element "parent"))
+	  (a (make-element "child"))
+	  (b (make-text "text")))
+      (expect-condition (next-sibling a) stp-error)
+      (expect-condition (next-sibling b) stp-error)
+      (append-child parent a)
+      (append-child parent b)
+      (assert-equal b (next-sibling a))
+      (expect-condition (next-sibling b) stp-error)
+      (values)))
+
+(defmacro with-sequence-test ((&optional) &body body)
+  `(let ((e (make-element "test"))
+	 (a (make-element "a"))
+	 (a2 (make-element "a"))
+	 (b (make-element "b"))
+	 (s (make-text "foo"))
+	 (x (make-element "x")))
+     (declare (ignorable x))
+     (append-child e a)
+     (append-child e a2)
+     (append-child e b)
+     (append-child e s)
+     ,@body))
+
+(defun maybe-local-name (x)
+  (typecase x
+    (element (local-name x))
+    (t nil)))
+
+(deftest node.count-children.0
+    (with-sequence-test ()
+      (count-children x e))
+  0)
+
+(deftest node.count-children.1
+    (with-sequence-test ()
+      (count-children a e))
+  1)
+
+(deftest node.count-children.2
+    (with-sequence-test ()
+      (count-children a e :test #'eql))
+  1)
+
+(deftest node.count-children.3
+    (with-sequence-test ()
+      (count-children a e :test 'eql))
+  1)
+
+(deftest node.count-children.4
+    (with-sequence-test ()
+      (count-children "a" e :key #'maybe-local-name :test #'equal))
+  2)
+
+(deftest node.count-children.5
+    (with-sequence-test ()
+      (count-children "a" e :key 'maybe-local-name :test 'equal))
+  2)
+
+(deftest node.count-children.6
+    (with-sequence-test ()
+      (count-children (copy-seq "a") e :key 'maybe-local-name))
+  0)
+
+(deftest node.count-children.7
+    (with-sequence-test ()
+      (count-children a e :from-end t))
+  1)
+
+(deftest node.count-children.8
+    (let ((seen '()))
+      (with-sequence-test ()
+	(prog1
+	    (count-children a e :key (lambda (c) (push c seen) c))
+	  (assert-equal seen (list s b a2 a)))))
+  1)
+
+(deftest node.count-children.9
+    (let ((seen '()))
+      (with-sequence-test ()
+	(prog1
+	    (count-children a e :from-end t :key (lambda (c) (push c seen) c))
+	  (assert-equal seen (list a a2 b s)))))
+  1)
+
+(deftest node.count-children.10
+    (with-sequence-test ()
+      (count-children "a"
+		      e
+		      :key 'maybe-local-name
+		      :test 'equal
+		      :start 1))
+  1)
+
+(deftest node.count-children.11
+    (with-sequence-test ()
+      (count-children "a"
+		      e
+		      :key 'maybe-local-name
+		      :test 'equal
+		      :end 1))
+  1)
+
+(deftest node.count-children.12
+    (with-sequence-test ()
+      (count-children "a"
+		      e
+		      :key 'maybe-local-name
+		      :test 'equal
+		      :start 1 :end 3))
+  1)
+
+(deftest node.count-children.13
+    (with-sequence-test ()
+      (count-children "a"
+		      e
+		      :key 'maybe-local-name
+		      :test 'equal
+		      :start 1
+		      :end nil))
+  1)
+
+(deftest node.count-children.14
+    (with-sequence-test ()
+      (count-children "a" e :key 'maybe-local-name :test 'equal :end nil))
+  2)
+
+(deftest node.count-children.15
+    (with-sequence-test ()
+      (count-children "a" e :test (constantly t) :start 1))
+  3)
+
+(deftest node.count-children-if.1
+    (with-sequence-test ()
+      (count-children-if #'identity e))
+  4)
+
+(deftest node.count-children-if.2
+    (with-sequence-test ()
+      (count-children-if (alexandria:of-type 'element) e))
+  3)
+
+(deftest node.count-children-if.3
+    (with-sequence-test ()
+      (count-children-if #'break a))
+  0)
+
+(deftest node.count-children-if.4
+    (with-sequence-test ()
+      (count-children-if (lambda (x) (equal x "a"))
+			 e
+			 :key 'maybe-local-name))
+  2)
+
+(deftest node.count-children-if.5
+    (with-sequence-test ()
+      (count-children-if 'identity e :key 'identity))
+  4)
+
+(deftest node.count-children-if.8
+  (count-if #'identity '(a b nil c d nil e) :key 'not)
+  2)
+
+(deftest node.count-children-if.9
+  (count-if #'evenp '(1 2 3 4 4 1 8 10 1))
+  5)
+
+(deftest node.count-children-if.10
+  (count-if #'evenp '(1 2 3 4 4 1 8 10 1) :key #'1+)
+  4)
+
+(deftest node.count-children-if.11
+    (let ((seen '()))
+      (with-sequence-test ()
+	(prog1
+	    (count-children-if (constantly t)
+			       e
+			       :key (lambda (c) (push c seen) c))
+	  (assert-equal seen (list b a2 a)))))
+  4)
+
+(deftest node.count-children-if.12
+    (let ((seen '()))
+      (with-sequence-test ()
+	(prog1
+	    (count-children-if (constantly t)
+			       e
+			       :from-end t
+			       :key (lambda (c) (push c seen) c))
+	  (assert-equal seen (list a a2 b)))))
+  4)
+
+(deftest node.count-children-if.10
+    (with-sequence-test ()
+      (count-children-if (lambda (x) (equal x "a"))
+			 e
+			 :key 'maybe-local-name
+			 :start 1))
+  1)
+
+(deftest node.count-children-if.11
+    (with-sequence-test ()
+      (count-children-if (lambda (x) (equal x "a"))
+			 e
+			 :key 'maybe-local-name
+			 :end 1))
+  1)
+
+(deftest node.count-children-if.12
+    (with-sequence-test ()
+      (count-children-if (lambda (x) (equal x "a"))
+			 e
+			 :key 'maybe-local-name
+			 :start 1 :end 3))
+  1)
+
+(deftest node.count-children-if.13
+    (with-sequence-test ()
+      (count-children-if (lambda (x) (equal x "a"))
+			 e
+			 :key 'maybe-local-name
+			 :start 1
+			 :end nil))
+  1)
+
+;;;; BUILDER
+
+;;;; the XML Test suite is a good test for the builder, so we need only few
+;;;; tests here
+
+(deftest builder.extra-namespaces
+    (serialize-to-string
+     (document-element
+      (cxml:parse #1="<b xmlns:extra=\"http://because-it.s-extra/\"/>"
+		  (make-builder))))
+  #1#)
 
 
 (do-tests)

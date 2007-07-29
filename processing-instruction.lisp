@@ -99,6 +99,6 @@
   '((:data data)
     (:target target)))
 
-(defreader text (data target)
+(defreader processing-instruction (data target)
   (setf (data this) data)
   (setf (target this) target))

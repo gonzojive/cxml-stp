@@ -399,6 +399,11 @@
       <li>
 	Entities and notations not represented as objects.
 	(Nobody cares.)
+	<ul>
+	  <li>
+	    But documentation of cxml's entire DTD structure forthcoming.
+	  </li>
+	</ul>
       </li>
     </ul>
   </page>

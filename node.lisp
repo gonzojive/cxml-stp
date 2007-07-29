@@ -82,6 +82,12 @@
     @short{Returns the node's base URI.}"))
 
 (defun cxml-stp:document (node)
+  "@arg[node]{an instance of @class{node}}
+   @return{a @class{document} or nil}
+   @short{Returns the document node ancestor of @code{node}.}
+
+   Returns the @class{document} node that is the @fun{root} of @code{node}
+   or @code{nil} if the root node is not a document."
   (check-type node node)
   (loop
      for parent = node then (parent parent)

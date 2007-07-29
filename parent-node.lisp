@@ -46,6 +46,7 @@
 (defgeneric %base-uri (node))
 (defmethod %base-uri ((node node)) (or (slot-value node '%base-uri) ""))
 (defmethod (setf %base-uri) (newval (node node))
+  #+(or)
   (when (and (plusp (length newval))
 	     *check-uri-syntax*
 	     (not (search "://" newval)))

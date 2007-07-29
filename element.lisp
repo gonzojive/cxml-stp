@@ -118,6 +118,8 @@
 
    @see{local-name}
    @see{namespace-uri}"
+  (when (find #\: name)
+    (stp-error "of-name used with QName as an argument"))
   (lambda (x)
     (and (typep x '(or attribute element))
 	 (or (null name) (equal (local-name x) name))
@@ -217,7 +219,19 @@
    Returns nil if no such attribute was found."
   (find-if test (%attributes element)))
 
-(defun attribute-value (element name &optional (uri ""))
+(defun sanitize-attribute-name (element name uri urip)
+  (multiple-value-bind (prefix local-name)
+      (cxml::split-qname name)
+    (when prefix
+      (let ((uri2 (find-namespace prefix element)))
+	(cond
+	  ((null uri2))
+	  ((not urip) (setf uri uri2))
+	  ((equal uri uri2))
+	  (t (stp-error "prefix ~A does not match uri ~A" prefix uri)))))
+    (values local-name uri)))
+
+(defun attribute-value (element name &optional (uri "" urip))
   "@arg[element]{an instance of @class{element}}
    @arg[name]{string, an NCName} 
    @arg[uri]{string, a namespace URI} 
@@ -226,17 +240,21 @@
      specified local name and namespace URI and returns its value.}
 
    Returns nil if no such attribute was found."
-  (let ((a (find-attribute-named element name uri)))
-    (if a
-	(value a)
-	nil)))
+  (multiple-value-bind (local-name uri)
+      (sanitize-attribute-name element name uri urip)
+    (let ((a (find-attribute-named element local-name uri)))
+      (if a
+	  (value a)
+	  nil))))
 
-(defun (setf attribute-value) (newval element name &optional (uri ""))
-  (let ((a (find-attribute-named element name uri)))
-    (if a
-	(setf (value a) newval)
-	(add-attribute element (make-attribute newval name uri)))
-    newval))
+(defun (setf attribute-value) (newval element name &optional (uri "" urip))
+  (multiple-value-bind (local-name uri)
+      (sanitize-attribute-name element name uri urip)
+    (let ((a (find-attribute-named element local-name uri)))
+      (if a
+	  (setf (value a) newval)
+	  (add-attribute element (make-attribute newval name uri)))
+      newval)))
 
 (defmacro with-attributes ((&rest entries) element &body body)
   "Evaluate body with the specified attributes bound lexically as if they
@@ -632,8 +650,11 @@
     (:namespace-prefix namespace-prefix non-empty-string)
     (:namespace-uri namespace-uri non-empty-string)))
 
+(defun attributes-for-print (elt)
+  (sort (list-attributes elt) #'string< :key #'qualified-name))
+
 (defmethod slots-for-print-object append ((node element))
-  '((:attributes %attributes identity)
+  '((:attributes attributes-for-print identity)
     (:extra-namespaces namespaces-for-print identity)))
 
 (defun namespaces-for-print (element)
@@ -653,5 +674,5 @@
 (defreader element ((attributes nil) (extra-namespaces nil))
   (dolist (a attributes)
     (add-attribute this a))
-  (loop for (prefix uri) on extra-namespaces do
+  (loop for (prefix uri) in extra-namespaces do
        (add-extra-namespace this prefix uri)))
