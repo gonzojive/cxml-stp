@@ -401,6 +401,12 @@
 	(assert-equal (data p-i) str))
       (values)))
 
+(deftest pi.setf.2
+    (let* ((p-i (make-processing-instruction "target" "data")))
+      (expect-condition (setf (data p-i) (string (code-char 0))) stp-error)
+      (assert-equal (data p-i) "data")
+      (values)))
+
 ;;; zzz testCorrectSurrogates
 ;;; zzz testSurrogates
 
@@ -439,6 +445,11 @@
     (dolist (str (list "pre:target" "pre:" ":target")
 	     (values))
       (expect-condition (make-processing-instruction str "data") stp-error)))
+
+(deftest pi.string-value
+    (let ((n (make-processing-instruction "target" "data")))
+      (string-value n))
+  "data")
 
 (deftest pi.print-object
     (let ((n (make-processing-instruction "target" "data")))
@@ -721,6 +732,14 @@
       (assert-node= n (read-from-string (write-to-string n)))
       (values)))
 
+(deftest doctype.string-value
+    (let* ((name "Ottokar")
+	   (sysid "http://www.w3.org/TR/some.dtd")
+	   (pubid "-//Me//some public ID")
+	   (n ))
+      (string-value (make-document-type name sysid pubid)))
+  "")
+
 (deftest doctype.setf.public-id.nil
     (let* ((name "Ottokar")
 	   (sysid "http://www.w3.org/TR/some.dtd")
@@ -957,12 +976,49 @@
        stp-error)
       (values)))
 
+(deftest document.delete-child.2
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (a (make-element "a"))
+	   (b (make-element "b"))
+	   (c (make-element "c"))
+	   (d (make-element "d")))
+      (append-child root a)
+      (append-child root b)
+      (append-child root c)
+      (append-child root d)
+      (delete-child-if #'identity root :count 1 :start 1 :end 3)
+      (assert-equal (list a c d) (list-children root))
+      (values)))
+
+(deftest document.delete-child.3
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (a (make-element "a"))
+	   (b (make-element "b"))
+	   (c (make-element "c"))
+	   (d (make-element "d")))
+      (append-child root a)
+      (append-child root b)
+      (append-child root c)
+      (append-child root d)
+      (delete-child-if #'identity root :count 1 :start 1 :end 3 :from-end t)
+      (assert-equal (list a b d) (list-children root))
+      (values)))
+
 (deftest document.serialize
     (let* ((root (make-element "root"))
 	   (document (make-document root)))
       (serialize-to-string document))
   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <root/>")
+
+(deftest document.string-value
+    (let* ((root (make-element "root"))
+	   (document (make-document root)))
+      (append-child root (make-text "frob"))
+      (string-value document))
+  "frob")
 
 (deftest document.print-object
     (let ((n (make-document (make-element "root"))))
@@ -1436,6 +1492,29 @@
       (expect-condition (add-extra-namespace element "foo" "hoppla") warning)
       (values)))
 
+(deftest element.add-extra-namespace.5
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (add-extra-namespace element nil nil)
+      (block nil
+	(map-extra-namespaces (lambda (prefix uri)
+				(assert-equal prefix "")
+				(assert-equal uri "")
+				(return t))
+			      element)
+	(error "extra namespace not found"))
+      (values)))
+
+(deftest element.add-extra-namespace.6
+    (let* ((name "red:sakjdhjhd")
+	   (uri "http://www.red.com/")
+	   (element (make-element name uri)))
+      (expect-condition
+       (add-extra-namespace element "foo" (string (code-char 0)))
+       stp-error)
+      (values)))
+
 (deftest element.insert-child.nil
     (let* ((name "red:sakjdhjhd")
 	   (uri "http://www.red.com/")
@@ -1564,6 +1643,14 @@
     (let ((element (make-element "pre:name" "http://www.example.com")))
       (expect-condition
        (setf (attribute-value element "pre:a" "http://different") "value")
+       stp-error)
+      (values)))
+
+(deftest element.add-attribute.4
+    (let ((element (make-element "pre:name" "http://www.example.com")))
+      (expect-condition
+       (add-attribute element
+		      (make-attribute"value" "pre:a" "http://different"))
        stp-error)
       (values)))
 
@@ -1743,6 +1830,13 @@
       ;; change existing attribute
       (setf (attribute-value e "pre:foo" "http://pre") "2")
       (assert-node= e g)
+      (values)))
+
+(deftest element.setf.attribute-value.2
+    (let ((e (make-element "pre:sakjdhjhd" "http://pre")))
+      (setf (attribute-value e "pre:flubba") "value")
+      (assert-equal (namespace-uri (car (list-attributes e)))
+		    "http://pre")
       (values)))
 
 (deftest element.map-attributes
@@ -2449,6 +2543,37 @@
 	  (append-child e child2)
 	  (expect-condition (replace-child parent child child2) stp-error)))
       (values)))
+
+(deftest node.insert-child-before.1
+    (let ((parent (make-element "parent"))
+	  (a (make-element "child"))
+	  (b (make-text "text"))
+	  (new1 (make-text "new"))
+	  (new2 (make-text "new2")))
+      (expect-condition (insert-child-before parent new1 a) stp-error)
+      (expect-condition (insert-child-before parent new2 b) stp-error)
+      (append-child parent a)
+      (append-child parent b)
+      (insert-child-before parent new1 a)
+      (insert-child-before parent new2 b)
+      (assert-equal (list new1 a new2 b) (list-children parent))
+      (values)))
+
+(deftest node.insert-child-after.1
+    (let ((parent (make-element "parent"))
+	  (a (make-element "child"))
+	  (b (make-text "text"))
+	  (new1 (make-text "new1"))
+	  (new2 (make-text "new2")))
+      (expect-condition (insert-child-after parent new1 a) stp-error)
+      (expect-condition (insert-child-after parent new2 b) stp-error)
+      (append-child parent a)
+      (append-child parent b)
+      (insert-child-after parent new1 a)
+      (insert-child-after parent new2 b)
+      (assert-equal (list a new1 b new2) (list-children parent))
+      (values)))
+
 
 
 ;;;; NODE
