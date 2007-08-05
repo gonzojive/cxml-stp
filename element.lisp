@@ -74,6 +74,7 @@
    @arg[uri]{a string, the namespace URI}
    @return{an @class{element}}
    @short{This function creates an element node of the given name.}"
+  (check-type name runes:rod)
   (let ((result (make-instance 'element)))
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)

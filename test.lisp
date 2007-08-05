@@ -28,9 +28,14 @@
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (defpackage :cxml-stp-test
-  (:use :cl :rt :stp))
+  (:use :cl :rt :stp)
+  #+openmcl (:shadow #:check-type))
 
 (in-package :cxml-stp-test)
+
+#+openmcl
+(defmacro check-type (place type)
+  `(assert (typep ,place ',type)))
 
 (defmethod xmlconf::serialize-document ((document node))
   (serialize document (cxml:make-octet-vector-sink :canonical 2)))

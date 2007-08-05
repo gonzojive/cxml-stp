@@ -429,6 +429,27 @@
     </example>
   </page>
 
+  <page title="SERIALIZE examples">
+    STP to DOM:
+    <example title="Convert STP to DOM">
+      <repl>CL-USER> (<b>stp:serialize</b> document (<b>cxml-dom:make-dom-builder</b>))</repl>
+      <result>#&lt;RUNE-DOM::DOCUMENT {1005A421F1}></result>
+    </example>
+    STP to xmls-style lists:
+    <example title="Convert STP to DOM">
+      <repl>CL-USER> (<b>stp:serialize</b> document (<b>cxml-xmls:make-xmls-builder</b>))</repl>
+      <result>(("x" . "") NIL)</result>
+    </example>
+    Relax NG validation:
+    <example title="Validate against Relax NG schema">
+      <repl>CL-USER> (let ((schema (cxml-rng:parse-compact #p"/home/david/demo.rnc")))
+	   (<b>stp:serialize</b> document (<b>cxml-rng:make-validator schema</b>)))</repl>
+      <result>Error: element example () not valid,
+was expecting an element named "demo", in the namespace ""
+   [Condition of type CXML-RNG:RNG-ERROR]</result>
+    </example>
+  </page>
+
   <page title="Printed representation">
     Structure-like output for copy&amp;paste in the REPL
     <repl>CL-USER> (stp:make-document (stp:make-element "list"))</repl>

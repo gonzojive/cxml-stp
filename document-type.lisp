@@ -97,15 +97,15 @@
    @short{This function creates a document-type node.}
 
    @see{document}"
-  (let ((result (make-instance 'document-type)))
+  (let ((result (make-instance 'cxml-stp:document-type)))
     (setf (root-element-name result) root-element-name)
     (setf (system-id result) system-id)
     (setf (public-id result) public-id)
     (setf (internal-subset result) internal-subset)
     result))
 
-(defmethod copy ((node document-type))
-  (let ((result (make-instance 'document-type)))
+(defmethod copy ((node cxml-stp:document-type))
+  (let ((result (make-instance 'cxml-stp:document-type)))
     (setf (root-element-name result) (root-element-name node))
     (setf (system-id result) (system-id node))
     (setf (public-id result) (public-id node))
@@ -121,7 +121,7 @@
   (unless (namep str)
     (stp-error "not a Name: ~S" str)))
 
-(defmethod (setf root-element-name) :before (newval (node document-type))
+(defmethod (setf root-element-name) :before (newval (node cxml-stp:document-type))
   (unless (zerop (length newval))
     (check-xml-name newval)
     (handler-case
@@ -129,7 +129,7 @@
       (cxml:well-formedness-violation ()
 	(stp-error "not a QName: ~A" newval)))))
 
-(defmethod (setf internal-subset) :around (newval (node document-type))
+(defmethod (setf internal-subset) :around (newval (node cxml-stp:document-type))
   (setf newval (or newval ""))
   (unless (zerop (length newval))
     (handler-case
@@ -142,7 +142,7 @@
 		   c))))
   (call-next-method newval node))
 
-(defmethod (setf public-id) :around (newval (node document-type))
+(defmethod (setf public-id) :around (newval (node cxml-stp:document-type))
   (when (equal newval "")
     (setf newval nil))
   (when (and newval (null (system-id node)))
@@ -153,7 +153,7 @@
     (stp-error "malformed public id: ~S" newval))
   (call-next-method newval node))
 
-(defmethod (setf system-id) :around (newval (node document-type))
+(defmethod (setf system-id) :around (newval (node cxml-stp:document-type))
   (when (equal newval "")
     (setf newval nil))
   (when (and (public-id node) (null newval))
@@ -166,7 +166,7 @@
     (stp-error "system id contains both single and double quote"))
   (call-next-method newval node))
 
-(defmethod string-value ((node document-type))
+(defmethod string-value ((node cxml-stp:document-type))
   "")
 
 ;; for the XML test suite
@@ -183,7 +183,7 @@
 (defmethod sax:end-document ((handler notation-collector))
   (collected-notations handler))
 
-(defmethod serialize ((node document-type) handler)
+(defmethod serialize ((node cxml-stp:document-type) handler)
   (sax:start-dtd handler
 		 (root-element-name node)
 		 (public-id node)
@@ -211,13 +211,13 @@
 
 ;;; printing
 
-(defmethod slots-for-print-object append ((node document-type))
+(defmethod slots-for-print-object append ((node cxml-stp:document-type))
   '((:root-element-name root-element-name)
     (:system-id system-id)
     (:public-id public-id)
     (:internal-subset internal-subset)))
 
-(defreader document-type
+(defreader cxml-stp:document-type
     (root-element-name system-id public-id internal-subset)
   (setf (root-element-name this) root-element-name)
   (setf (system-id this) system-id)

@@ -65,7 +65,7 @@
   (assert-orphan child)
   (typecase child
     ((or comment processing-instruction))
-    (document-type
+    (cxml-stp:document-type
      (when (stp:document-type parent)
        (stp-error "attempt to insert multiple document types"))
      (let ((j (child-position-if (alexandria:of-type 'element) parent)))
@@ -89,7 +89,7 @@
 	  (typep new-child 'element))
       (setf (document-element parent) new-child))
     ((and (eq old-child (stp:document-type parent))
-	  (typep new-child 'document-type))
+	  (typep new-child 'cxml-stp:document-type))
       (setf (stp:document-type parent) new-child))
     (t
       (call-next-method))))
@@ -99,11 +99,11 @@
    @return{a @class{document-type}, or nil}
    This function returns the child node that is a document type, or nil.
    @see{document-element}"
-  (find-if (alexandria:of-type 'document-type) (%children document)))
+  (find-if (alexandria:of-type 'cxml-stp:document-type) (%children document)))
 
 ;; zzz gefaellt mir nicht
 (defun (setf cxml-stp:document-type) (newval document)
-  (check-type newval document-type)
+  (check-type newval cxml-stp:document-type)
   (let ((old (cxml-stp:document-type document)))
     (unless (eq newval old)
       (assert-orphan newval)

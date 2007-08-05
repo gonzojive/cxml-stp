@@ -48,7 +48,7 @@
 
     The @fun{parent} of an attribute is always an @class{element} or nil,
     but the attribute is not a child of that element.
- 
+
     @see-slot{local-name}
     @see-slot{namespace-prefix}
     @see-slot{namespace-uri}
