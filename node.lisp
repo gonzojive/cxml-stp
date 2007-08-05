@@ -91,7 +91,7 @@
   (check-type node node)
   (loop
      for parent = node then (parent parent)
-     while (and parent (not (typep parent 'document)))
+     while (and parent (not (typep parent 'cxml-stp:document)))
      finally (return parent)))
 
 (defun root (node)
@@ -450,7 +450,8 @@
 (defmethod print-object ((object node) stream)
   (when (and *print-readably* (not *read-eval*))
     (error "cannot print STP nodes readably without *read-eval*"))
-  (if *print-pretty*
+  ;; zzz pretty printing on clisp introduces spurious closing parens
+  (if (and *print-pretty* #+clisp nil)
       (pretty-print-node object stream)
       (ugly-print-node object stream)))
 
