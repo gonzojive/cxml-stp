@@ -46,7 +46,7 @@
    @see{serialize}"
   (make-instance 'builder))
 
-(defclass builder ()
+(defclass builder (sax:content-handler)
   ((nodes :initform nil :accessor builder-nodes)
    (doctype :initform nil :accessor builder-doctype)
    (namespace-declarations :initform nil :accessor namespace-declarations)
