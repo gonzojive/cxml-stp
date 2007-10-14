@@ -31,6 +31,7 @@
 	   #:map-recursively
 	   #:do-recursively
 	   #:find-recursively
+	   #:find-recursively-if
 	   #:filter-recursively
 
 	   #:document

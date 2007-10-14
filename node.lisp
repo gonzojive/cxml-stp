@@ -413,8 +413,23 @@
     (when (funcall test item (funcall key child))
       (return child))))
 
+(defun find-recursively-if (predicate node &key key)
+  "@arg[test]{a designator for a function of one argument that returns
+     a generalized boolean}
+   @arg[node]{a @class{node}}
+   @arg[key]{a designator for a function of one argument, or nil}
+   @return{a @class{node} or nil}
+   Searches in pre-order for the first descendant of @code{node} that
+   satisfies the @code{test} and returns it.
+
+   @see{find-child-if}"
+  (setf key (or key #'identity))
+  (do-recursively (child node)
+    (when (funcall predicate (funcall key child))
+      (return child))))
+
 (defun filter-recursively (test node &key key)
-  "@arg[predicate]{a designator for a function of one argument that returns
+  "@arg[test]{a designator for a function of one argument that returns
      a generalized boolean}
    @arg[node]{a @class{node}}
    @arg[key]{a designator for a function of one argument, or nil}
