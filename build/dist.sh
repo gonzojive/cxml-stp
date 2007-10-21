@@ -25,4 +25,4 @@ tgz=$TMPDIR/${dir}.tgz
 tar czf $tgz $dir
 gpg -b -a $tgz
 
-mv $tgz $home/build/
+mv $tgz $tgz.asc $home/build/
