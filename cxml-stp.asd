@@ -27,8 +27,9 @@
      (:file "comment")
      (:file "processing-instruction")
      (:file "text")
-     (:file "builder"))
-    :depends-on (:cxml :alexandria))
+     (:file "builder")
+     (:file "xpath"))
+    :depends-on (:cxml :alexandria :xpath))
 
 (defsystem :cxml-stp-test
     :default-component-class closure-source-file
