@@ -1856,22 +1856,28 @@
       (values)))
 
 (deftest element.with-attributes
-    (let* ((e (make-element "sakjdhjhd")))
-      (add-attribute e (make-attribute "1" "pre:foo" "http://pre"))
-      (add-attribute e (make-attribute "2" "bar"))
-      (with-attributes ((foo "pre:foo" "http://pre")
-			(bar "bar")
-			(baz "pre:baz"  "http://pre"))
-	  e
-	(setf foo (format nil "<~A>" foo))
-	(setf bar (string #\newline))
-	(setf baz "pre:xyz"))
-      (assert-equal (attribute-value e "foo" "http://pre") "<1>")
-      (assert-equal (attribute-value e "bar") (string #\newline))
-      (assert-equal (attribute-value e "baz" "http://pre") "pre:xyz")
-      (values)))
+     (let* ((e (make-element "sakjdhjhd")))
+       (add-attribute e (make-attribute "1" "pre:foo" "http://pre"))
+       (add-attribute e (make-attribute "2" "bar"))
+      (add-attribute e (make-attribute "gorilla" "ape"))
+       (with-attributes ((foo "pre:foo" "http://pre")
+                        (bar "bar")
+                       (baz "pre:baz"  "http://pre")
+                        moose
+                        ape)
+          e
+        (setf foo (format nil "<~A>" foo))
+        (setf bar (string #\newline))
+       (setf baz "pre:xyz")
+        (setf moose "mangy")
+        (assert-equal ape "gorilla"))
+       (assert-equal (attribute-value e "foo" "http://pre") "<1>")
+       (assert-equal (attribute-value e "bar") (string #\newline))
+       (assert-equal (attribute-value e "baz" "http://pre") "pre:xyz")
+      (assert-equal (attribute-value e "moose") "mangy")
+       (values)))
 
-(deftest element.find-attribute-named
+ (deftest element.find-attribute-named
     (let* ((name "sakjdhjhd")
 	   (e (make-element name)))
       (assert-equal nil (find-attribute-named e "test"))
