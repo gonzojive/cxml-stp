@@ -371,7 +371,7 @@
    This function returns the same list as @code{remove-if-not} on the result
    of @fun{list-children}."
   (declare (ignore from-end start end count key))
-  (apply #'remove-if-not predicate (%children parent) args))
+  (apply #'remove-if-not predicate (list-children parent) args))
 
 (defun map-recursively (fn node)
   "@arg[fn]{a designator for a function of one argument}
