@@ -36,7 +36,9 @@
    as a namespace URI does not have URI syntax.")
 (defun check-namespace-uri (uri)
   (when (and *check-uri-syntax*
-	     (not (or (search "://" uri) (eql 4 (mismatch "uri:" uri)))))
+	     (not (or (search "://" uri)
+		      (eql 4 (mismatch "uri:" uri))
+		      (eql 4 (mismatch "urn:" uri)))))
     (warn "namespace URI does not look like an absolute URL: ~S" uri)))
 
 (define-condition stp-error (simple-error)
