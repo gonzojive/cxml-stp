@@ -42,6 +42,9 @@
 (defmethod xpath-protocol:local-name ((node stp:node))
   (local-name node))
 
+(defmethod xpath-protocol:namespace-prefix ((node stp:node))
+  (namespace-prefix node))
+
 (defmethod xpath-protocol:parent-node ((node stp:node))
   (stp:parent node))
 
