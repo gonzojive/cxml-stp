@@ -37,7 +37,9 @@
 			(vector->pipe vector (1+ start)))))
 
 
-;;; XPath protocol implementation for STP
+;;;; XPath protocol implementation for STP
+
+;;;; FIXME: xpath-protocol:child-pipe destructively normalizes the STP tree!
 
 (defmethod xpath-protocol:local-name ((node stp:node))
   (local-name node))
@@ -58,6 +60,7 @@
   nil)
 
 (defmethod xpath-protocol:child-pipe ((node stp:parent-node))
+  (normalize-text-nodes! node)
   (vector->pipe (%children node)))
 
 (defmethod xpath-protocol:attribute-pipe ((node stp:node))
@@ -142,3 +145,39 @@
   (deftypemapping attribute :attribute)
   (deftypemapping element :element)
   (deftypemapping stp-namespace :namespace))
+
+(defun normalize-text-nodes! (node)
+  (when (typep node 'stp:parent-node)
+    (let ((children (%children node)))
+      (when (loop
+	       for child across children
+	       for a = nil then b
+	       for b = (typep child 'text)
+	       thereis (and a b))
+	(let ((previous nil)
+	      (results '()))
+	  (stp:do-children (child node)
+	    (cond
+	      ((not (typep child 'stp:text))
+	       (when previous
+		 (push (stp:make-text
+			(apply #'concatenate 'string (nreverse previous)))
+		       results)
+		 (setf (%parent (car results)) node)
+		 (setf previous nil))
+	       (push child results))
+	      (previous
+	       (push (stp:data child) previous))
+	      ((zerop (length (stp:data child))))
+	      (t
+	       (setf previous (list (stp:data child))))))
+	  (when previous
+	    (push (stp:make-text
+		   (apply #'concatenate 'string (nreverse previous)))
+		  results)
+	    (setf (%parent (car results)) node))
+	  (setf (cxml-stp-impl::%children node)
+		(let ((n (length results)))
+		  (make-array n
+			      :fill-pointer n
+			      :initial-contents (nreverse results)))))))))
