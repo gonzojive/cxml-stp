@@ -259,6 +259,13 @@
 	(stp-error "node has no next sibling"))
       (nth-child idx p))))
 
+(defun number-of-children (parent)
+  "@arg[parent]{a @class{node}}
+   @return{the number of child nodes}
+   Returns the number of {parent}'s child nodes.
+   @see{count-children}"
+  (length (%children parent)))
+
 (defun count-children
     (value parent &rest args &key from-end (start 0) end key test)
   "@arg[value]{an object}
@@ -271,6 +278,7 @@
      child nodes}
    Counts (and returns the number of) @code{parent}'s child nodes satisfying
    the test.
+   @see{number-of-children}
    @see{count-children-if}"
   (declare (ignore from-end start end key test))
   (apply #'count value (%children parent) args))
@@ -287,6 +295,7 @@
      child nodes}
    Counts (and returns the number of) @code{parent}'s child nodes satisfying
    @code{predicate}.
+   @see{number-of-children}
    @see{count-children}"
   (declare (ignore from-end start end key))
   (apply #'count-if predicate (%children parent) args))

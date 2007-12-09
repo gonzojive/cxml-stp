@@ -25,6 +25,7 @@
 	   #:find-child-if
 	   #:child-position
 	   #:child-position-if
+	   #:number-of-children
 	   #:count-children
 	   #:count-children-if
 	   #:filter-children

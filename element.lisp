@@ -301,7 +301,9 @@
                     (destructuring-bind (var name &optional (uri ""))
                        (if (and (listp entry) (cdr entry))
                             entry
-                            (list entry (string-downcase (symbol-name entry))))
+                            (list entry (string-downcase
+					 (princ-to-string
+					  (symbol-name entry)))))
                       `(,var (attribute-value ,element ,name ,uri))))
                   entries)
         ,@body)))
