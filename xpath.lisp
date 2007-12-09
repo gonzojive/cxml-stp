@@ -153,7 +153,7 @@
 	       for child across children
 	       for a = nil then b
 	       for b = (typep child 'text)
-	       thereis (and a b))
+	       thereis (and b (or a (zerop (length (stp:data child))))))
 	(let ((previous nil)
 	      (results '()))
 	  (stp:do-children (child node)
