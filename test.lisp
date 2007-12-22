@@ -218,9 +218,8 @@
       (assert-equal (type-of c2) 'text)
       (values)))
 
-;;; zzz surrogate testing is going to be a mess, because cxml will have to
-;;; support both Lisps with 16 bit and with 21 bit characters.  Not the
-;;; mention all the surrogate-related bugs we've got.
+;;; zzz surrogate testing is going to be a bit more work, because cxml
+;;; supports both Lisps with 16 bit and with 21 bit characters.
 ;;;   - testSurrogates
 ;;;   - testNonBMPText
 ;;;   - testEndOfBMP

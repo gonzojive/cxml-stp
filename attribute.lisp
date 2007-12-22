@@ -87,14 +87,9 @@
 		 (eql code 10)
 		 (eql code 13)
 		 (<= 32 code #xd7ff)
-		 ;; zzz don't disallow surrogates, which would only be
-		 ;; correct on SBCL if we used its full character range, and
-		 ;; is always incorrect on allegro.
-		 (<= #xD800 code #xDBFF)
-		 (<= #xDC00 code #xDFFF)
-		 ;;
+		 #+rune-is-utf-16 (<= #xD800 code #xDFFF)
 		 (<= #xe000 code #xfffd)
-		 (<= #x10000 code #x10ffff))))
+		 #-rune-is-utf-16 (<= #x10000 code #x10ffff))))
 	 (the string str)))
 
 (defmethod (setf value) :before (newval (node attribute))
