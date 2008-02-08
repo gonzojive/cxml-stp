@@ -56,6 +56,9 @@
 (defmethod xpath-protocol:qualified-name ((node stp:node))
   (qualified-name node))
 
+(defmethod xpath-protocol:base-uri ((node dom:node))
+  (stp:base-uri node))
+
 (defmethod xpath-protocol:child-pipe ((node stp:node))
   nil)
 
