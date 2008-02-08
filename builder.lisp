@@ -91,6 +91,7 @@
 
 (defmethod sax:start-element ((builder builder) uri lname qname attrs)
   (let ((element (make-element qname uri)))
+    (setf (%base-uri element) (sax:xml-base builder))
     (dolist (a attrs)
       (let ((uri (sax:attribute-namespace-uri a)))
 	(unless (equal uri "http://www.w3.org/2000/xmlns/")
