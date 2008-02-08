@@ -31,7 +31,7 @@
 #+sbcl
 (declaim (optimize (debug 2)))
 
-(defvar *check-uri-syntax* t
+(defvar *check-uri-syntax* nil
   "If true (the default), a warning is issued if a string specified
    as a namespace URI does not have URI syntax.")
 (defun check-namespace-uri (uri)
