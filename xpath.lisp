@@ -142,6 +142,7 @@
 	     `(defmethod xpath-protocol:node-type-p
 		  ((node ,class) (type (eql ,keyword)))
 		t)))
+  (deftypemapping document :document)
   (deftypemapping comment :comment)
   (deftypemapping processing-instruction :processing-instruction)
   (deftypemapping text :text)
