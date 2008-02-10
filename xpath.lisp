@@ -82,6 +82,9 @@
   prefix
   uri)
 
+(defmethod xpath-protocol:node-p ((node stp-namespace))
+  t)
+
 (defmethod xpath-protocol:child-pipe ((node stp-namespace)) nil)
 (defmethod xpath-protocol:attribute-pipe ((node stp-namespace)) nil)
 (defmethod xpath-protocol:namespace-pipe ((node stp-namespace)) nil)
@@ -129,6 +132,9 @@
 
 (defmethod xpath-protocol:string-value ((node node))
   (string-value node))
+
+(defmethod xpath-protocol:node-p ((node node))
+  t)
 
 (defmethod xpath-protocol:node-type-p ((node node) type)
   (declare (ignore type))
