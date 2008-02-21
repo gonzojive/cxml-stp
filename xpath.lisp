@@ -191,3 +191,54 @@
 		  (make-array n
 			      :fill-pointer n
 			      :initial-contents (nreverse results)))))))))
+
+;; FIXME: the following is some BAD cheating; we need DTD to do it properly
+(defmethod xpath-protocol:get-element-by-id ((node stp:node) id)
+  (find-recursively id (stp:document node)
+		    :key #'(lambda (node)
+			     (when (typep node 'stp:element)
+			       (stp:attribute-value node "id")))
+		    :test #'equal))
+
+(defmethod xpath-protocol:local-name ((node stp:text)) "")
+
+(defmethod xpath-protocol:namespace-prefix ((node stp:text)) "")
+
+(defmethod xpath-protocol:namespace-uri ((node stp:text)) "")
+
+(defmethod xpath-protocol:qualified-name ((node stp:text)) "")
+
+(defmethod xpath-protocol:local-name ((node stp:comment)) "")
+
+(defmethod xpath-protocol:namespace-prefix ((node stp:comment)) "")
+
+(defmethod xpath-protocol:namespace-uri ((node stp:comment)) "")
+
+(defmethod xpath-protocol:qualified-name ((node stp:comment)) "")
+
+(defmethod xpath-protocol:namespace-prefix ((node stp:processing-instruction)) "")
+
+(defmethod xpath-protocol:local-name ((node stp:processing-instruction))
+  (stp:target node))
+
+(defmethod xpath-protocol:qualified-name ((node stp:processing-instruction))
+  (stp:target node))
+
+(defmethod xpath-protocol:namespace-uri ((node stp:processing-instruction)) "")
+
+(defmethod xpath-protocol:namespace-prefix ((node stp:document)) "")
+
+(defmethod xpath-protocol:qualified-name ((node stp:document)) "")
+
+(defmethod xpath-protocol:local-name ((node stp:document)) "")
+
+(defmethod xpath-protocol:processing-instruction-target ((node stp:node))
+  node)
+
+(defmethod xpath-protocol:processing-instruction-target ((node stp:processing-instruction))
+  (stp:target node))
+
+(defun run-xpath-tests ()
+  (let ((xpath::*dom-builder* (stp:make-builder))
+	(xpath::*document-element* #'stp:document-element))
+    (xpath::run-all-tests)))

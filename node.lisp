@@ -187,7 +187,7 @@
    @arg[node]{a @class{node}}
    @arg[result]{a form}
    @return{the result of evaluating @code{result}}
-   Executes @code{bode} with @code{var} bound to successive child
+   Executes @code{body} with @code{var} bound to successive child
      nodes."
   `(block nil
      (map-children nil (lambda (,var) ,@body) ,node)
@@ -469,8 +469,13 @@
 (defgeneric slots-for-print-object (node)
   (:method-combination append))
 
+(defun maybe-uri->string (thing)
+  (if (puri:uri-p thing)
+      (princ-to-string thing)
+      (non-empty-string thing)))
+
 (defmethod slots-for-print-object append ((node parent-node))
-  '((:base-uri %base-uri non-empty-string)
+  '((:base-uri %base-uri maybe-uri->string)
     (:children list-children identity)))
 
 (defmethod print-object ((object node) stream)
