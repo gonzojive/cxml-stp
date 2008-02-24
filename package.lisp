@@ -280,4 +280,5 @@
 
 (defpackage :cxml-stp-impl
   (:use :cl :stp)
-  (:shadow #:document #:document-type))
+  (:shadow #:document #:document-type)
+  (:import-from :xpath-protocol #:define-default-method))

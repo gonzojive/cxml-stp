@@ -41,38 +41,38 @@
 
 ;;;; FIXME: xpath-protocol:child-pipe destructively normalizes the STP tree!
 
-(defmethod xpath-protocol:local-name ((node stp:node))
+(define-default-method xpath-protocol:local-name ((node stp:node))
   (local-name node))
 
-(defmethod xpath-protocol:namespace-prefix ((node stp:node))
+(define-default-method xpath-protocol:namespace-prefix ((node stp:node))
   (namespace-prefix node))
 
-(defmethod xpath-protocol:parent-node ((node stp:node))
+(define-default-method xpath-protocol:parent-node ((node stp:node))
   (stp:parent node))
 
-(defmethod xpath-protocol:namespace-uri ((node stp:node))
+(define-default-method xpath-protocol:namespace-uri ((node stp:node))
   (namespace-uri node))
 
-(defmethod xpath-protocol:qualified-name ((node stp:node))
+(define-default-method xpath-protocol:qualified-name ((node stp:node))
   (qualified-name node))
 
-(defmethod xpath-protocol:base-uri ((node dom:node))
+(define-default-method xpath-protocol:base-uri ((node dom:node))
   (stp:base-uri node))
 
-(defmethod xpath-protocol:child-pipe ((node stp:node))
+(define-default-method xpath-protocol:child-pipe ((node stp:node))
   nil)
 
-(defmethod xpath-protocol:child-pipe ((node stp:parent-node))
+(define-default-method xpath-protocol:child-pipe ((node stp:parent-node))
   (normalize-text-nodes! node)
   (vector->pipe (%children node)))
 
-(defmethod xpath-protocol:attribute-pipe ((node stp:node))
+(define-default-method xpath-protocol:attribute-pipe ((node stp:node))
   nil)
 
-(defmethod xpath-protocol:attribute-pipe ((node stp:element))
+(define-default-method xpath-protocol:attribute-pipe ((node stp:element))
   (list-attributes node))
 
-(defmethod xpath-protocol:namespace-pipe ((node stp:node))
+(define-default-method xpath-protocol:namespace-pipe ((node stp:node))
   (when (stp:parent node)
     (xpath-protocol:namespace-pipe (stp:parent node))))
 
@@ -82,23 +82,23 @@
   prefix
   uri)
 
-(defmethod xpath-protocol:node-p ((node stp-namespace))
+(define-default-method xpath-protocol:node-p ((node stp-namespace))
   t)
 
-(defmethod xpath-protocol:child-pipe ((node stp-namespace)) nil)
-(defmethod xpath-protocol:attribute-pipe ((node stp-namespace)) nil)
-(defmethod xpath-protocol:namespace-pipe ((node stp-namespace)) nil)
+(define-default-method xpath-protocol:child-pipe ((node stp-namespace)) nil)
+(define-default-method xpath-protocol:attribute-pipe ((node stp-namespace)) nil)
+(define-default-method xpath-protocol:namespace-pipe ((node stp-namespace)) nil)
 
-(defmethod xpath-protocol:parent-node ((node stp-namespace))
+(define-default-method xpath-protocol:parent-node ((node stp-namespace))
   (stp-namespace-parent node))
-(defmethod xpath-protocol:local-name ((node stp-namespace))
+(define-default-method xpath-protocol:local-name ((node stp-namespace))
   (stp-namespace-prefix node))
-(defmethod xpath-protocol:qualified-name ((node stp-namespace))
+(define-default-method xpath-protocol:qualified-name ((node stp-namespace))
   (stp-namespace-prefix node))
-(defmethod xpath-protocol:namespace-uri ((node stp-namespace))
+(define-default-method xpath-protocol:namespace-uri ((node stp-namespace))
   (stp-namespace-uri node))
 
-(defmethod xpath-protocol:namespace-pipe ((node stp:element))
+(define-default-method xpath-protocol:namespace-pipe ((node stp:element))
   (let ((node node)
 	(table (make-hash-table :test 'equal))
 	(current '()))
@@ -130,22 +130,22 @@
 		  (iterate)))))
       (recurse))))
 
-(defmethod xpath-protocol:string-value ((node node))
+(define-default-method xpath-protocol:string-value ((node node))
   (string-value node))
 
-(defmethod xpath-protocol:node-p ((node node))
+(define-default-method xpath-protocol:node-p ((node node))
   t)
 
-(defmethod xpath-protocol:node-type-p ((node node) type)
+(define-default-method xpath-protocol:node-type-p ((node node) type)
   (declare (ignore type))
   nil)
 
-(defmethod xpath-protocol:node-type-p ((node stp-namespace) type)
+(define-default-method xpath-protocol:node-type-p ((node stp-namespace) type)
   (declare (ignore type))
   nil)
 
 (macrolet ((deftypemapping (class keyword)
-	     `(defmethod xpath-protocol:node-type-p
+	     `(define-default-method xpath-protocol:node-type-p
 		  ((node ,class) (type (eql ,keyword)))
 		t)))
   (deftypemapping document :document)
@@ -193,49 +193,60 @@
 			      :initial-contents (nreverse results)))))))))
 
 ;; FIXME: the following is some BAD cheating; we need DTD to do it properly
-(defmethod xpath-protocol:get-element-by-id ((node stp:node) id)
+(define-default-method xpath-protocol:get-element-by-id ((node stp:node) id)
   (find-recursively id (stp:document node)
 		    :key #'(lambda (node)
 			     (when (typep node 'stp:element)
 			       (stp:attribute-value node "id")))
 		    :test #'equal))
 
-(defmethod xpath-protocol:local-name ((node stp:text)) "")
+(define-default-method xpath-protocol:local-name ((node stp:text)) "")
 
-(defmethod xpath-protocol:namespace-prefix ((node stp:text)) "")
+(define-default-method xpath-protocol:namespace-prefix ((node stp:text)) "")
 
-(defmethod xpath-protocol:namespace-uri ((node stp:text)) "")
+(define-default-method xpath-protocol:namespace-uri ((node stp:text)) "")
 
-(defmethod xpath-protocol:qualified-name ((node stp:text)) "")
+(define-default-method xpath-protocol:qualified-name ((node stp:text)) "")
 
-(defmethod xpath-protocol:local-name ((node stp:comment)) "")
+(define-default-method xpath-protocol:local-name ((node stp:comment)) "")
 
-(defmethod xpath-protocol:namespace-prefix ((node stp:comment)) "")
+(define-default-method xpath-protocol:namespace-prefix ((node stp:comment)) "")
 
-(defmethod xpath-protocol:namespace-uri ((node stp:comment)) "")
+(define-default-method xpath-protocol:namespace-uri ((node stp:comment)) "")
 
-(defmethod xpath-protocol:qualified-name ((node stp:comment)) "")
+(define-default-method xpath-protocol:qualified-name
+    ((node stp:comment))
+  "")
 
-(defmethod xpath-protocol:namespace-prefix ((node stp:processing-instruction)) "")
+(define-default-method xpath-protocol:namespace-prefix
+    ((node stp:processing-instruction))
+  "")
 
-(defmethod xpath-protocol:local-name ((node stp:processing-instruction))
+(define-default-method xpath-protocol:local-name
+    ((node stp:processing-instruction))
   (stp:target node))
 
-(defmethod xpath-protocol:qualified-name ((node stp:processing-instruction))
+(define-default-method xpath-protocol:qualified-name
+    ((node stp:processing-instruction))
   (stp:target node))
 
-(defmethod xpath-protocol:namespace-uri ((node stp:processing-instruction)) "")
+(define-default-method xpath-protocol:namespace-uri
+    ((node stp:processing-instruction))
+  "")
 
-(defmethod xpath-protocol:namespace-prefix ((node stp:document)) "")
+(define-default-method xpath-protocol:namespace-prefix ((node stp:document))
+  "")
 
-(defmethod xpath-protocol:qualified-name ((node stp:document)) "")
+(define-default-method xpath-protocol:qualified-name ((node stp:document)) "")
 
-(defmethod xpath-protocol:local-name ((node stp:document)) "")
+(define-default-method xpath-protocol:local-name ((node stp:document)) "")
 
-(defmethod xpath-protocol:processing-instruction-target ((node stp:node))
+(define-default-method xpath-protocol:processing-instruction-target
+    ((node stp:node))
   node)
 
-(defmethod xpath-protocol:processing-instruction-target ((node stp:processing-instruction))
+(define-default-method xpath-protocol:processing-instruction-target
+    ((node stp:processing-instruction))
   (stp:target node))
 
 (defun run-xpath-tests ()
