@@ -56,7 +56,7 @@
 (define-default-method xpath-protocol:qualified-name ((node stp:node))
   (qualified-name node))
 
-(define-default-method xpath-protocol:base-uri ((node dom:node))
+(define-default-method xpath-protocol:base-uri ((node stp:node))
   (stp:base-uri node))
 
 (define-default-method xpath-protocol:child-pipe ((node stp:node))
@@ -130,8 +130,11 @@
 		  (iterate)))))
       (recurse))))
 
-(define-default-method xpath-protocol:string-value ((node node))
+(define-default-method xpath-protocol:node-text ((node node))
   (string-value node))
+
+(define-default-method xpath-protocol:node-text ((node stp-namespace))
+  (stp-namespace-uri node))
 
 (define-default-method xpath-protocol:node-p ((node node))
   t)
