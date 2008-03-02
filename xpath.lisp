@@ -116,8 +116,9 @@
 		 (null)
 		 (element
 		     (map-extra-namespaces #'yield node)
-		   (yield (%namespace-prefix node)
-			  (%namespace-uri node))
+                   (when (plusp (length (%namespace-prefix node)))
+                     (yield (%namespace-prefix node)
+                            (%namespace-uri node)))
 		   (dolist (a (%attributes node))
 		     (when (plusp (length (namespace-prefix a)))
 		       (yield (namespace-prefix a) (namespace-uri a))))
@@ -125,7 +126,7 @@
 		   (iterate))
 		 (document
 		  (yield "xml" "http://www.w3.org/XML/1998/namespace")
-		  (yield "xmlns" "http://www.w3.org/2000/xmlns/")
+		  #+nil (yield "xmlns" "http://www.w3.org/2000/xmlns/")
 		  (setf node nil)
 		  (iterate)))))
       (recurse))))
