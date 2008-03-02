@@ -68,7 +68,8 @@
   ((root-element-name :accessor root-element-name)
    (system-id :initform nil :accessor system-id)
    (public-id :initform nil :accessor public-id)
-   (internal-subset :initform nil :accessor internal-subset))
+   (internal-subset :initform nil :accessor internal-subset)
+   (dtd :initform nil :accessor dtd))
   (:documentation
    "@short{Instances of this class represent the DOCTYPE declaration at the
     beginning of a document.}

@@ -199,13 +199,24 @@
 			      :fill-pointer n
 			      :initial-contents (nreverse results)))))))))
 
-;; FIXME: the following is some BAD cheating; we need DTD to do it properly
 (define-default-method xpath-protocol:get-element-by-id ((node stp:node) id)
-  (find-recursively id (stp:document node)
-		    :key #'(lambda (node)
-			     (when (typep node 'stp:element)
-			       (stp:attribute-value node "id")))
-		    :test #'equal))
+  (let* ((document (stp:document node))
+	 (dtd (when (stp:document-type document)
+		(stp:dtd (stp:document-type document)))))
+    (when dtd
+      (block nil
+	(flet ((test (node)
+		 (when (typep node 'stp:element)
+		   (let ((elmdef
+			  (cxml::find-element (stp:qualified-name node) dtd)))
+		     (when elmdef
+		       (dolist (attdef (cxml::elmdef-attributes elmdef))
+			 (when (eq :ID (cxml::attdef-type attdef))
+			   (let* ((name (cxml::attdef-name attdef))
+				  (value (stp:attribute-value node name)))
+			     (when (and value (equal value id))
+			       (return node))))))))))
+	  (find-recursively-if #'test document))))))
 
 (define-default-method xpath-protocol:local-name ((node stp:text)) "")
 

@@ -94,6 +94,7 @@
 	   #:system-id
 	   #:public-id
 	   #:internal-subset
+	   #:dtd
 
 	   #:text
 	   #:make-text

@@ -86,6 +86,10 @@
 		      (builder-internal-subset-sink builder))))
   (setf (builder-internal-subset-sink builder) nil))
 
+(defmethod sax::dtd ((builder builder) dtd)
+  (when (builder-doctype builder)
+    (setf (dtd (builder-doctype builder)) dtd)))
+
 (defmethod sax:start-prefix-mapping ((builder builder) prefix uri)
   (push (cons (or prefix "") uri) (namespace-declarations builder)))
 

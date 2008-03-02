@@ -166,6 +166,9 @@
     (stp-error "system id contains both single and double quote"))
   (call-next-method newval node))
 
+(defmethod (setf dtd) :before (newval (node cxml-stp:document-type))
+  (check-type newval (or cxml::dtd null)))
+
 (defmethod string-value ((node cxml-stp:document-type))
   "")
 
