@@ -218,6 +218,18 @@
 			       (return node))))))))))
 	  (find-recursively-if #'test document))))))
 
+(define-default-method xpath-protocol:unparsed-entity-uri
+    ((node stp:node) name)
+  (let ((doctype (stp:document-type (stp:document node))))
+    (when doctype
+      (let ((dtd (stp:dtd doctype)))
+	(when dtd
+	  (let ((entdef (cdr (gethash name (cxml::dtd-gentities dtd)))))
+	    (when (typep entdef 'cxml::external-entdef)
+	      (let ((uri (cxml::extid-system (cxml::entdef-extid entdef))))
+		(when uri
+		  (puri:render-uri uri nil))))))))))
+
 (define-default-method xpath-protocol:local-name ((node stp:text)) "")
 
 (define-default-method xpath-protocol:namespace-prefix ((node stp:text)) "")
