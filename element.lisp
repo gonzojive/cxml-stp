@@ -565,7 +565,7 @@
 	(local-name (%local-name node))
 	(qname (qualified-name node))
 	(attrs (mapcar (lambda (a)
-			 (sax:make-attribute 
+			 (sax:make-attribute
 			  :namespace-uri (namespace-uri a)
 			  :local-name (local-name a)
 			  :qname (qualified-name a)

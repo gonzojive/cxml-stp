@@ -56,8 +56,14 @@
 (define-default-method xpath-protocol:qualified-name ((node stp:node))
   (qualified-name node))
 
-(define-default-method xpath-protocol:base-uri ((node stp:node))
+(define-default-method xpath-protocol:base-uri ((node stp:element))
   (stp:base-uri node))
+
+(define-default-method xpath-protocol:base-uri ((node stp:document))
+  (stp:base-uri node))
+
+(define-default-method xpath-protocol:base-uri ((node stp:node))
+  nil)
 
 (define-default-method xpath-protocol:child-pipe ((node stp:node))
   nil)
@@ -84,6 +90,9 @@
   parent
   prefix
   uri)
+
+(define-default-method xpath-protocol:base-uri ((node stp-namespace))
+  nil)
 
 (define-default-method xpath-protocol:node-p ((node stp-namespace))
   t)
