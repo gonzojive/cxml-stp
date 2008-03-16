@@ -108,7 +108,7 @@
 (define-default-method xpath-protocol:qualified-name ((node stp-namespace))
   (stp-namespace-prefix node))
 (define-default-method xpath-protocol:namespace-uri ((node stp-namespace))
-  (stp-namespace-uri node))
+  "")
 
 (define-default-method xpath-protocol:namespace-pipe ((node stp:element))
   (let ((node node)
