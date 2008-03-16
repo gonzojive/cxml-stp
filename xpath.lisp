@@ -126,17 +126,23 @@
 	     (recurse ()
 	       (etypecase node
 		 (null)
-		 (element
+		 (stp:element
+		   (let ((parent (stp:parent node)))
 		     (map-extra-namespaces #'yield node)
-                   (when (plusp (length (%namespace-prefix node)))
-                     (yield (%namespace-prefix node)
-                            (%namespace-uri node)))
-		   (dolist (a (%attributes node))
-		     (when (plusp (length (namespace-prefix a)))
-		       (yield (namespace-prefix a) (namespace-uri a))))
-		   (setf node (stp:parent node))
+		     (unless (and (zerop (length (%namespace-prefix node)))
+				  (zerop (length (%namespace-uri node)))
+				  (or (typep parent 'stp:document)
+				      (zerop
+				       (length
+					(stp:find-namespace "" parent)))))
+		       (yield (%namespace-prefix node)
+			      (%namespace-uri node)))
+		     (dolist (a (%attributes node))
+		       (when (plusp (length (namespace-prefix a)))
+			 (yield (namespace-prefix a) (namespace-uri a))))
+		     (setf node parent))
 		   (iterate))
-		 (document
+		 (stp:document
 		  (yield "xml" "http://www.w3.org/XML/1998/namespace")
 		  #+nil (yield "xmlns" "http://www.w3.org/2000/xmlns/")
 		  (setf node nil)
