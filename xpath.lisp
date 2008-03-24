@@ -91,6 +91,15 @@
   prefix
   uri)
 
+(define-default-method xpath-protocol:node-equal
+    ((a stp-namespace) (b stp-namespace))
+  (and (eq (stp-namespace-parent a) (stp-namespace-parent b))
+       (equal (stp-namespace-prefix a) (stp-namespace-prefix b))))
+
+(define-default-method xpath-protocol:hash-key
+    ((node stp-namespace))
+  (cons (stp-namespace-parent node) (stp-namespace-prefix node)))
+
 (define-default-method xpath-protocol:base-uri ((node stp-namespace))
   nil)
 
@@ -110,13 +119,14 @@
 (define-default-method xpath-protocol:namespace-uri ((node stp-namespace))
   "")
 
-(define-default-method xpath-protocol:namespace-pipe ((node stp:element))
-  (let ((node node)
+(define-default-method xpath-protocol:namespace-pipe
+    ((original-node stp:element))
+  (let ((node original-node)
 	(table (make-hash-table :test 'equal))
 	(current '()))
     (labels ((yield (prefix uri)
 	       (unless (gethash prefix table)
-		 (let ((nsnode (make-stp-namespace node prefix uri)))
+		 (let ((nsnode (make-stp-namespace original-node prefix uri)))
 		   (setf (gethash prefix table) nsnode)
 		   (push nsnode current))))
 	     (iterate ()
