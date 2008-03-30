@@ -59,8 +59,9 @@
     (multiple-value-bind (prefix local-name)
 	(cxml::split-qname name)
       (setf prefix (or prefix ""))
-      (setf (local-name result) local-name)
+      (setf (local-name result) "tmp")
       (rename-attribute result prefix uri)
+      (setf (local-name result) local-name)
       (setf (value result) value))
     result))
 
@@ -100,7 +101,7 @@
 
 (defmethod (setf local-name) (newval (node attribute))
   (check-nc-name newval)
-  (when (equal newval "xmlns")
+  (when (and (equal newval "xmlns") (equal (stp:namespace-uri node) ""))
     (stp-error "attempt to represent a namespace declaration as an ATTRIBUTE"))
   (setf (%local-name node) newval))
 
@@ -131,6 +132,9 @@
     ((zerop (length prefix))
       (unless (zerop (length uri))
 	(stp-error "attribute with URI but no prefix"))
+     (when (equal (stp:local-name attribute) "xmlns")
+       (stp-error
+	"attempt to represent a namespace declaration as an ATTRIBUTE"))
       (values
        (setf (%namespace-prefix attribute) "")
        (setf (%namespace-uri attribute) "")))
