@@ -73,7 +73,7 @@
 	 (stp-error
 	  "attempt to insert document type after document element"))))
     (element
-     (unless (alexandria:emptyp (%children parent))
+     (when (some (alexandria:of-type 'element) (%children parent))
        (stp-error "attempt to insert multiple document elements")))
     (t
      (stp-error "not a valid child of a document: ~A" child))))

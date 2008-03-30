@@ -837,6 +837,27 @@
       (assert-equal nil (parent root))
       (values)))
 
+(deftest document.setf.document-element.regression.1
+    (let* ((root (make-element "root"))
+	   (document (make-document root))
+	   (new-root (make-element "new-root")))
+      (stp:prepend-child document (make-comment "test"))
+      ;; change
+      (setf (document-element document) new-root)
+      (assert-equal (document-element document) new-root)
+      (assert-equal nil (parent root))
+      (expect-condition (setf (document-element document) nil) type-error)
+      ;; no multiple parents
+      (let ((top (make-element "top"))
+	    (child (make-element "child")))
+	(append-child top child)
+	(expect-condition (setf (document-element document) child) stp-error))
+      ;; once again, noop
+      (setf (document-element document) new-root)
+      (assert-equal (document-element document) new-root)
+      (assert-equal nil (parent root))
+      (values)))
+
 ;; like document.setf.document-element, but using replace-child instead
 (deftest document.setf.replace-child
     (let* ((root (make-element "root"))
