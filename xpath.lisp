@@ -289,6 +289,10 @@
     ((node stp:processing-instruction))
   "")
 
+(define-default-method xpath-protocol:namespace-uri
+    ((node stp:document))
+  "")
+
 (define-default-method xpath-protocol:namespace-prefix ((node stp:document))
   "")
 
