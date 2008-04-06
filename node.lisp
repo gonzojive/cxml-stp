@@ -262,7 +262,7 @@
 (defun number-of-children (parent)
   "@arg[parent]{a @class{node}}
    @return{the number of child nodes}
-   Returns the number of {parent}'s child nodes.
+   Returns the number of @code{parent}'s child nodes.
    @see{count-children}"
   (length (%children parent)))
 
