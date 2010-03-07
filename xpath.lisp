@@ -191,38 +191,39 @@
 (defun normalize-text-nodes! (node)
   (when (typep node 'stp:parent-node)
     (let ((children (%children node)))
-      (when (loop
-	       for child across children
-	       for a = nil then b
-	       for b = (typep child 'text)
-	       thereis (and b (or a (zerop (length (stp:data child))))))
-	(let ((previous nil)
-	      (results '()))
-	  (stp:do-children (child node)
-	    (cond
-	      ((not (typep child 'stp:text))
-	       (when previous
-		 (push (stp:make-text
-			(apply #'concatenate 'string (nreverse previous)))
-		       results)
-		 (setf (%parent (car results)) node)
-		 (setf previous nil))
-	       (push child results))
-	      (previous
-	       (push (stp:data child) previous))
-	      ((zerop (length (stp:data child))))
-	      (t
-	       (setf previous (list (stp:data child))))))
-	  (when previous
-	    (push (stp:make-text
-		   (apply #'concatenate 'string (nreverse previous)))
-		  results)
-	    (setf (%parent (car results)) node))
-	  (setf (cxml-stp-impl::%children node)
-		(let ((n (length results)))
-		  (make-array n
-			      :fill-pointer n
-			      :initial-contents (nreverse results)))))))))
+      (when children
+        (when (loop
+                for child across children
+                for a = nil then b
+                for b = (typep child 'text)
+                thereis (and b (or a (zerop (length (stp:data child))))))
+          (let ((previous nil)
+                (results '()))
+            (stp:do-children (child node)
+              (cond
+                ((not (typep child 'stp:text))
+                 (when previous
+                   (push (stp:make-text
+                          (apply #'concatenate 'string (nreverse previous)))
+                         results)
+                   (setf (%parent (car results)) node)
+                   (setf previous nil))
+                 (push child results))
+                (previous
+                 (push (stp:data child) previous))
+                ((zerop (length (stp:data child))))
+                (t
+                 (setf previous (list (stp:data child))))))
+            (when previous
+              (push (stp:make-text
+                     (apply #'concatenate 'string (nreverse previous)))
+                    results)
+              (setf (%parent (car results)) node))
+            (setf (cxml-stp-impl::%children node)
+                  (let ((n (length results)))
+                    (make-array n
+                                :fill-pointer n
+                                :initial-contents (nreverse results))))))))))
 
 (define-default-method xpath-protocol:get-element-by-id ((node stp:node) id)
   (let* ((document (stp:document node))
